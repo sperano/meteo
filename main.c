@@ -100,9 +100,9 @@ int main_test2(void) {
         memcpy((void *)VideoBases[y], Bitmap[y], 40);
     }
     memcpy((void *)VideoBases[20], TxtLine1, 14);
-    memcpy((void *)VideoBases[21], TxtLine2, 5);
-    memcpy((void *)VideoBases[22], TxtLine2, 5);
-    memcpy((void *)VideoBases[23], TxtLine2, 5);
+    memcpy((void *)VideoBases[21], TxtLine2, 9);
+    memcpy((void *)VideoBases[22], TxtLine3, 17);
+    //memcpy((void *)VideoBases[23], TxtLine2, 5);
     while(!kbhit());
 
     POKE(TEXTON, 0);
