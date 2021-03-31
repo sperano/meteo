@@ -1,0 +1,116 @@
+// check https://github.com/pedgarcia/a2graph/blob/master/a2graph.c
+
+#include <stdio.h>
+#include <string.h>
+#include <apple2.h>
+#include <conio.h>
+#include <peekpoke.h>
+#include "meteo.h"
+
+#define _80STORE 0xc001
+#define TEXTOFF 0xc050
+#define TEXTON 0xc051
+#define MIXEDOFF 0xc052
+#define MIXEDON 0xc053
+#define PAGE2OFF 0xc054
+#define PAGE2ON 0xc055
+#define HIRESOFF 0xc056
+#define HIRESON 0xc057
+
+unsigned int VideoBases[] = {
+    0x400,
+    0x480,
+    0x500,
+    0x580,
+    0x600,
+    0x680,
+    0x700,
+    0x780,
+    0x428,
+    0x4a8,
+    0x528,
+    0x5a8,
+    0x628,
+    0x6a8,
+    0x728,
+    0x7a8,
+    0x450,
+    0x4d0,
+    0x550,
+    0x5d0,
+    0x650,
+    0x6d0,
+    0x750,
+    0x7d0,
+};
+
+void clear_screen() {
+    memset((void *)VideoBases[0], 0, 0x400);
+    //memset((void *)0x650, 'A' + 0x80, 40);
+    //memset((void *)0x750, 'A' + 0xa0, 40);
+    memset((void *)VideoBases[20], ' ' + 0x80, 40);
+    memset((void *)VideoBases[21], ' ' + 0x80, 40);
+    memset((void *)VideoBases[22], ' ' + 0x80, 40);
+    memset((void *)VideoBases[23], ' ' + 0x80, 40);
+}
+
+void pset(unsigned char x, unsigned char y, unsigned char color) {
+    unsigned int addr = VideoBases[y >> 1] + x;
+    unsigned char byte = PEEK(addr);
+
+    if (y & 1) {
+        byte |= color << 4;
+    } else {
+        byte |= color;
+    }
+    POKE(addr, byte);
+}
+
+int main_test1(void) {
+    unsigned char x;
+
+    POKE(TEXTOFF, 0);
+    POKE(HIRESOFF, 0);
+    POKE(MIXEDON, 0);
+    POKE(PAGE2OFF, 0);
+    clear_screen();
+    for(x = 0; x < 40; x++) {
+        pset(x, x, 9);
+        pset(x, 39-x, 3);
+        pset(x, 20, 4);
+        pset(20, x, 6);
+    }
+
+    while(!kbhit());
+
+    POKE(TEXTON, 0);
+    return 0;
+}
+
+int main_test2(void) {
+    int y;
+
+    POKE(TEXTOFF, 0);
+    POKE(HIRESOFF, 0);
+    POKE(MIXEDON, 0);
+    POKE(PAGE2OFF, 0);
+    clear_screen();
+
+    for(y = 0; y < 20; y++) {
+        memcpy((void *)VideoBases[y], Bitmap[y], 40);
+    }
+    memcpy((void *)VideoBases[20], TxtLine1, 14);
+    memcpy((void *)VideoBases[21], TxtLine2, 5);
+    memcpy((void *)VideoBases[22], TxtLine2, 5);
+    memcpy((void *)VideoBases[23], TxtLine2, 5);
+    while(!kbhit());
+
+    POKE(TEXTON, 0);
+    clrscr();
+    return 0;
+}
+
+int main(void) {
+    //return main_test1();
+    return main_test2();
+}
