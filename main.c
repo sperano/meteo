@@ -1,10 +1,17 @@
 // check https://github.com/pedgarcia/a2graph/blob/master/a2graph.c
 // check https://github.com/ppelleti/json65
+// 01 to 04, then  09 to 013
+// http://openweathermap.org/img/w/01d.png
+// http://openweathermap.org/img/w/01n.png
 #include <stdio.h>
 #include <string.h>
 #include <apple2.h>
 #include <conio.h>
 #include <peekpoke.h>
+//#include "vendor/json65-master/src/json65.h"
+#include "vendor/json65-master/src/json65-file.h"
+#include "vendor/json65-master/src/json65-print.h"
+#include "vendor/json65-master/src/json65-tree.h"
 #include "meteo.h"
 
 #define _80STORE 0xc001
@@ -55,8 +62,8 @@ void clear_screen() {
 }
 
 void pset(unsigned char x, unsigned char y, unsigned char color) {
-    unsigned int addr = VideoBases[y >> 1] + x;
-    unsigned char byte = PEEK(addr);
+    uint16_t addr = VideoBases[y >> 1] + x;
+    uint8_t byte = PEEK(addr);
 
     if (y & 1) {
         byte |= color << 4;
@@ -67,7 +74,7 @@ void pset(unsigned char x, unsigned char y, unsigned char color) {
 }
 
 int main_test1(void) {
-    unsigned char x;
+    uint8_t x;
 
     POKE(TEXTOFF, 0);
     POKE(HIRESOFF, 0);
@@ -88,7 +95,7 @@ int main_test1(void) {
 }
 
 int main_test2(void) {
-    int y;
+    uint8_t y;
 
     POKE(TEXTOFF, 0);
     POKE(HIRESOFF, 0);
@@ -110,7 +117,64 @@ int main_test2(void) {
     return 0;
 }
 
+static uint8_t scratch[2048];
+static j65_tree tree;
+
+int main_test3(void) {
+    const char *filename = "WEATHER.JSON";
+    FILE *f;
+    j65_node *weather, *main, *description, *icon;
+    int8_t ret;
+
+    printf("\nLoading %s...\n", filename);
+    j65_init_tree (&tree);
+    f = fopen (filename, "r");
+    if (!f) {
+        perror (filename);
+        return 1;
+    }
+    ret = j65_parse_file(f,                // file to parse
+                        scratch,           // pointer to a scratch buffer
+                        sizeof (scratch),  // length of scratch buffer
+                        &tree,             // "context" for callback
+                        j65_tree_callback, // the callback function
+                        0,                 // 0 means use max nesting depth
+                        stderr,            // where to print errors
+                        40,                // width of screen (for errors)
+                        filename,          // used in error messages
+                        NULL);             // no custom error func
+    if (ret < 0) {
+        fclose(f);
+        return 1;
+    }
+    fclose (f);
+    weather = j65_find_key (&tree, tree.root, "weather");
+    if (weather == NULL) {
+        printf ("Could not find weather.\n");
+        j65_free_tree (&tree);
+        return 2;
+    }
+
+    main = weather->child->child->child->next;
+    printf("main: %s\n", main->child->string);
+
+    description = main->next;
+    printf("description: %s\n", description->child->string);
+
+    icon = description->next;
+    printf("icon: %s\n", icon->child->string);
+
+    j65_free_tree (&tree);
+
+    printf("\n\nPress any key...");
+    //cgetc();
+    //main_test1();
+    cgetc();
+    return main_test2();
+}
+
 int main(void) {
     //return main_test1();
-    return main_test2();
+    //return main_test2();
+    return main_test3();
 }

@@ -1,0 +1,12 @@
+*~
+*.o
+*.map
+*.tmp
+test
+test-string
+test-tree
+test-quote
+test-print
+testfile.system
+testfile.po
+example.system
