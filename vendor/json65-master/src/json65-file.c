@@ -162,5 +162,5 @@ void __fastcall__ j65_default_err_func (FILE *err,
     } else {
         fprintf (err, "Unknown error code %d", status);
     }
-    ctx = ctx;
+    ctx = ctx; // to silence a warning
 }
