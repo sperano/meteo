@@ -14,16 +14,6 @@
 #include "vendor/json65-master/src/json65-tree.h"
 #include "meteo.h"
 
-#define _80STORE 0xc001
-#define TEXTOFF 0xc050
-#define TEXTON 0xc051
-#define MIXEDOFF 0xc052
-#define MIXEDON 0xc053
-#define PAGE2OFF 0xc054
-#define PAGE2ON 0xc055
-#define HIRESOFF 0xc056
-#define HIRESON 0xc057
-
 unsigned int VideoBases[] = {
     0x400,
     0x480,
