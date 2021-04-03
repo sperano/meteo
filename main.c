@@ -105,7 +105,7 @@ int main_test2(void) {
     return 0;
 }
 
-static uint8_t scratch[2048];
+static uint8_t scratch[1024];
 static j65_tree tree;
 
 int main_test3(void) {
