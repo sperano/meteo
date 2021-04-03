@@ -8,9 +8,7 @@
 #include <apple2.h>
 #include <conio.h>
 #include <peekpoke.h>
-//#include "vendor/json65-master/src/json65.h"
 #include "vendor/json65-master/src/json65-file.h"
-#include "vendor/json65-master/src/json65-print.h"
 #include "vendor/json65-master/src/json65-tree.h"
 #include "meteo.h"
 
