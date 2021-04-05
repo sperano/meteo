@@ -4,6 +4,7 @@
 // http://openweathermap.org/img/w/01d.png
 // http://openweathermap.org/img/w/01n.png
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <apple2.h>
 #include <conio.h>
@@ -49,6 +50,7 @@ void clear_screen() {
     memset((void *)VideoBases[23], ' ' + 0x80, 40);
 }
 
+/*
 void pset(unsigned char x, unsigned char y, unsigned char color) {
     uint16_t addr = VideoBases[y >> 1] + x;
     uint8_t byte = PEEK(addr);
@@ -81,6 +83,7 @@ int main_test1(void) {
     POKE(TEXTON, 0);
     return 0;
 }
+*/
 
 int main_test2(void) {
     uint8_t y;
@@ -89,6 +92,8 @@ int main_test2(void) {
     POKE(HIRESOFF, 0);
     POKE(MIXEDON, 0);
     POKE(PAGE2OFF, 0);
+    //POKE(0xC00D, 0); // 80COLON
+    //POKE(0xC05E, 0); // SETAN3
     clear_screen();
 
     for(y = 0; y < 20; y++) {
@@ -105,22 +110,27 @@ int main_test2(void) {
     return 0;
 }
 
-static uint8_t scratch[1024];
-static j65_tree tree;
-
 int main_test3(void) {
     const char *filename = "WEATHER.JSON";
     FILE *f;
-    j65_node *weather, *main, *description, *icon;
-    int8_t ret;
+    CityWeather cw;
+    int rc;
+    CityWeather *cw2 = &cw;
 
     printf("\nLoading %s...\n", filename);
-    j65_init_tree (&tree);
-    f = fopen (filename, "r");
+    f = fopen(filename, "r");
     if (!f) {
-        perror (filename);
+        perror(filename);
         return 1;
     }
+    rc = parse_api_response(cw2, f);
+    if (rc == 0) {
+        printf("City: %s\n", cw.city_name);
+        printf("Weather: %s\n", cw.weather);
+        printf("Description: %s\n", cw.description);
+        printf("Icon: %s\n", cw.icon);
+    }
+    /*
     ret = j65_parse_file(f,                // file to parse
                         scratch,           // pointer to a scratch buffer
                         sizeof (scratch),  // length of scratch buffer
@@ -154,6 +164,7 @@ int main_test3(void) {
 
     j65_free_tree (&tree);
 
+    */
     printf("\n\nPress any key...");
     //cgetc();
     //main_test1();
