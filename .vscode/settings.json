@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "*.asm": "asm6809",
+        "*.s": "merlin32",
+        "json65-tree.h": "c",
+        "json65-file.h": "c"
+    }
+}
