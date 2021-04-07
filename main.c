@@ -129,6 +129,10 @@ int main_test3(void) {
         printf("Weather: %s\n", cw.weather);
         printf("Description: %s\n", cw.description);
         printf("Icon: %s\n", cw.icon);
+        printf("Temperature: %d\n", cw.temperature);
+        printf("Minimum: %d\n", cw.minimum);
+        printf("Maximum: %d\n", cw.maximum);
+        printf("Humidity: %d\n", cw.humidity);
     }
     /*
     ret = j65_parse_file(f,                // file to parse

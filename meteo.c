@@ -19,6 +19,24 @@ char* alloc_cpy(const char *src) {
     return dest;
 }
 
+uint16_t get_int(const char *src) {
+    uint16_t value = 0;
+    uint8_t dec = 0;
+
+    char *ptr_token = strchr(src, '.');
+    if (ptr_token == NULL) {
+        value = atoi(src);
+    } else {
+        *ptr_token = 0;
+        value = atoi(src);
+        dec = ptr_token[1] - '0';
+        if (dec >= 5) {
+            value++;
+        }
+    }
+    return value;
+}
+
 int parse_api_response(CityWeather *cw, FILE *f) {
     j65_tree tree;
     int8_t ret;
@@ -77,6 +95,11 @@ int parse_api_response(CityWeather *cw, FILE *f) {
     cw->weather = alloc_cpy(weather->child->string);
     cw->description = alloc_cpy(description->child->string);
     cw->icon = alloc_cpy(icon->child->string);
+    cw->temperature = get_int("37.5");
+    cw->minimum = get_int("37.4");
+    cw->maximum = get_int("38.7");
+    cw->humidity = get_int("25");
+
     j65_free_tree(&tree);
     free(scratch);
     return 0;
