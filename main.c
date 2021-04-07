@@ -115,7 +115,7 @@ int main_test3(void) {
     FILE *f;
     CityWeather cw;
     int rc;
-    CityWeather *cw2 = &cw;
+    //CityWeather *cw2 = &cw;
 
     printf("\nLoading %s...\n", filename);
     f = fopen(filename, "r");
@@ -123,7 +123,7 @@ int main_test3(void) {
         perror(filename);
         return 1;
     }
-    rc = parse_api_response(cw2, f);
+    rc = parse_api_response(&cw, f);
     if (rc == 0) {
         printf("City: %s\n", cw.city_name);
         printf("Weather: %s\n", cw.weather);
@@ -165,6 +165,10 @@ int main_test3(void) {
     j65_free_tree (&tree);
 
     */
+    free(cw.city_name);
+    free(cw.weather);
+    free(cw.description);
+    free(cw.icon);
     printf("\n\nPress any key...");
     //cgetc();
     //main_test1();

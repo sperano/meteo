@@ -17,10 +17,10 @@
 #define HIRESON 0xc057
 
 typedef struct CityWeather {
-    const char *city_name;
-    const char *weather;
-    const char *description;
-    const char *icon;
+    char *city_name;
+    char *weather;
+    char *description;
+    char *icon;
     int16_t temperature;
     int16_t minimum;
     int16_t maximum;
