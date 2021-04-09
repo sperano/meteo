@@ -1,3 +1,4 @@
 *.o
 meteo.bin
 meteo.po
+bitmap2c/bitmap2c
