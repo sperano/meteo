@@ -115,7 +115,6 @@ int main_test3(void) {
     FILE *f;
     CityWeather cw;
     int rc;
-    //CityWeather *cw2 = &cw;
 
     printf("\nLoading %s...\n", filename);
     f = fopen(filename, "r");
@@ -134,48 +133,11 @@ int main_test3(void) {
         printf("Maximum: %d\n", cw.maximum);
         printf("Humidity: %d\n", cw.humidity);
     }
-    /*
-    ret = j65_parse_file(f,                // file to parse
-                        scratch,           // pointer to a scratch buffer
-                        sizeof (scratch),  // length of scratch buffer
-                        &tree,             // "context" for callback
-                        j65_tree_callback, // the callback function
-                        0,                 // 0 means use max nesting depth
-                        stderr,            // where to print errors
-                        40,                // width of screen (for errors)
-                        filename,          // used in error messages
-                        NULL);             // no custom error func
-    if (ret < 0) {
-        fclose(f);
-        return 1;
-    }
-    fclose (f);
-    weather = j65_find_key (&tree, tree.root, "weather");
-    if (weather == NULL) {
-        printf ("Could not find weather.\n");
-        j65_free_tree (&tree);
-        return 2;
-    }
-
-    main = weather->child->child->child->next;
-    printf("main: %s\n", main->child->string);
-
-    description = main->next;
-    printf("description: %s\n", description->child->string);
-
-    icon = description->next;
-    printf("icon: %s\n", icon->child->string);
-
-    j65_free_tree (&tree);
-
-    */
     free(cw.city_name);
     free(cw.weather);
     free(cw.description);
     free(cw.icon);
     printf("\n\nPress any key...");
-    //cgetc();
-    //main_test1();
     cgetc();
     return main_test2();
 }
