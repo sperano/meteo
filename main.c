@@ -42,8 +42,6 @@ unsigned int VideoBases[] = {
 
 void clear_screen() {
     memset((void *)VideoBases[0], 0, 0x400);
-    //memset((void *)0x650, 'A' + 0x80, 40);
-    //memset((void *)0x750, 'A' + 0xa0, 40);
     memset((void *)VideoBases[20], ' ' + 0x80, 40);
     memset((void *)VideoBases[21], ' ' + 0x80, 40);
     memset((void *)VideoBases[22], ' ' + 0x80, 40);
