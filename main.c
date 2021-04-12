@@ -14,6 +14,11 @@
 #include "config.h"
 #include "meteo.h"
 
+char TxtLine1[41];
+char TxtLine2[41];
+char TxtLine3[41];
+char TxtLine4[41];
+
 unsigned int VideoBases[] = {
     0x400,
     0x480,
@@ -98,10 +103,9 @@ int main_test2(void) {
     for(y = 0; y < 20; y++) {
         memcpy((void *)VideoBases[y], Bitmap[y], 40);
     }
-    memcpy((void *)VideoBases[20], TxtLine1, 14);
-    memcpy((void *)VideoBases[21], TxtLine2, 9);
-    memcpy((void *)VideoBases[22], TxtLine3, 17);
-    //memcpy((void *)VideoBases[23], TxtLine2, 5);
+    memcpy((void *)VideoBases[20], TxtLine1, 40);
+    memcpy((void *)VideoBases[21], TxtLine2, 40);
+    memcpy((void *)VideoBases[22], TxtLine3, 40);
     while(!kbhit());
 
     POKE(TEXTON, 0);
@@ -159,10 +163,7 @@ void init_cities(MeteoConfig *cfg) {
         if (cfg->city_ids[i][0]) {
             cities[i] = fetch_data(cfg->city_ids[i]);
             if (cities[i]) {
-                //printf("---\n");
                 print_city_weather(cities[i]);
-                //printf("\n\nPress any key...");
-                //cgetc();
             }
         }
     }
@@ -176,13 +177,14 @@ void init_city_index() {
 }
 
 void next_city_index() {
-    for (++city_idx; city_idx < MAX_CITIES; ++city_idx) {
-        if (!cities[city_idx]) {
+    ++city_idx;
+    for (; city_idx < MAX_CITIES; ++city_idx) {
+        if (cities[city_idx]) {
             return;
         }
     }
     for (city_idx = 0; city_idx < MAX_CITIES; ++city_idx) {
-        if (!cities[city_idx]) {
+        if (cities[city_idx]) {
             return;
         }
     }
@@ -190,20 +192,39 @@ void next_city_index() {
 
 void prev_city_index() {
     for (--city_idx; city_idx >= 0; --city_idx) {
-        if (!cities[city_idx]) {
+        if (cities[city_idx]) {
             return;
         }
     }
     for (city_idx = MAX_CITIES - 1; city_idx >= 0; --city_idx) {
-        if (!cities[city_idx]) {
+        if (cities[city_idx]) {
             return;
         }
     }
 }
 
+void update_text() {
+    uint8_t i;
+    sprintf(TxtLine1, "%-40d", city_idx); //cities[city_idx]->city_name);
+    sprintf(TxtLine2, "%-40s", cities[city_idx]->id);
+    sprintf(TxtLine3, "%-40s", cities[city_idx]->city_name);
+    sprintf(TxtLine4, "%40s", cities[city_idx]->city_name);
+    for (i = 0; i < 40; i++) {
+        TxtLine1[i] += 0x80;
+        TxtLine2[i] += 0x80;
+        TxtLine3[i] += 0x80;
+        TxtLine4[i] += 0x80;
+    }
+    memcpy((void *)VideoBases[20], TxtLine1, 40);
+    memcpy((void *)VideoBases[21], TxtLine2, 40);
+    memcpy((void *)VideoBases[22], TxtLine3, 40);
+    memcpy((void *)VideoBases[23], TxtLine4, 40);
+}
+
 int main(void) {
     MeteoConfig *cfg;
-    uint8_t y, i;
+    uint8_t y; //, i;
+    char ch;
 
     printf("Meteo version %s\nby Eric Sperano (2021)\n\n", METEO_VERSION);
     cfg = get_config();
@@ -224,18 +245,25 @@ int main(void) {
     for(y = 0; y < 20; y++) {
         memcpy((void *)VideoBases[y], Bitmap[y], 40);
     }
-    //memset(TxtLine1, 0, 41);
-    sprintf(TxtLine1, "%-20s", cities[city_idx]->city_name);
-    for (i = 0; i < 40; i++) {
-        TxtLine1[i] += 0x80;
+    //city_idx=1;
+    update_text();
+    while (1) {
+        ch = cgetc();
+        switch (ch) {
+        case 'q':
+        case 'Q':
+            goto exit;
+        case 8:
+            prev_city_index();
+            update_text();
+            break;
+        case 21:
+            next_city_index();
+            update_text();
+            break;
+        }
     }
-
-    memcpy((void *)VideoBases[20], TxtLine1, 14);
-    memcpy((void *)VideoBases[21], TxtLine2, 9);
-    memcpy((void *)VideoBases[22], TxtLine3, 17);
-    //memcpy((void *)VideoBases[23], TxtLine2, 5);
-    while(!kbhit());
-
+exit:
     // back to text screen
     POKE(TEXTON, 0);
     clrscr();

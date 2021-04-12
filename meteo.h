@@ -35,7 +35,8 @@ int parse_api_response(CityWeather *cw, FILE *f);
 extern uint8_t Bitmap[20][40];
 
 extern char TxtLine1[41];
-extern unsigned char TxtLine2[];
-extern unsigned char TxtLine3[];
+extern char TxtLine2[41];
+extern char TxtLine3[41];
+extern char TxtLine4[41];
 
 #endif
