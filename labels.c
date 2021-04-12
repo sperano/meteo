@@ -1,4 +1,6 @@
 
+char TxtLine1[41];
+/*
 unsigned char TxtLine1[] = {
     'L' + 0x80,
     'O' + 0xA0,
@@ -15,6 +17,7 @@ unsigned char TxtLine1[] = {
     '6' + 0x80,
     'F' + 0x80
 };
+*/
 
 unsigned char TxtLine2[] = {
     'C' + 0x80,

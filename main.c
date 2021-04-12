@@ -203,7 +203,7 @@ void prev_city_index() {
 
 int main(void) {
     MeteoConfig *cfg;
-    uint8_t y;
+    uint8_t y, i;
 
     printf("Meteo version %s\nby Eric Sperano (2021)\n\n", METEO_VERSION);
     cfg = get_config();
@@ -224,6 +224,12 @@ int main(void) {
     for(y = 0; y < 20; y++) {
         memcpy((void *)VideoBases[y], Bitmap[y], 40);
     }
+    //memset(TxtLine1, 0, 41);
+    sprintf(TxtLine1, "%-20s", cities[city_idx]->city_name);
+    for (i = 0; i < 40; i++) {
+        TxtLine1[i] += 0x80;
+    }
+
     memcpy((void *)VideoBases[20], TxtLine1, 14);
     memcpy((void *)VideoBases[21], TxtLine2, 9);
     memcpy((void *)VideoBases[22], TxtLine3, 17);

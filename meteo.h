@@ -32,9 +32,9 @@ typedef struct CityWeather {
 
 int parse_api_response(CityWeather *cw, FILE *f);
 
-extern unsigned char Bitmap[20][40];
+extern uint8_t Bitmap[20][40];
 
-extern unsigned char TxtLine1[];
+extern char TxtLine1[41];
 extern unsigned char TxtLine2[];
 extern unsigned char TxtLine3[];
 
