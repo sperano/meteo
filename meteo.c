@@ -4,14 +4,13 @@
 #include "vendor/json65-master/src/json65-file.h"
 #include "vendor/json65-master/src/json65-tree.h"
 #include "meteo.h"
+#include "config.h"
 
 #define SCRATCH_SIZE 1024
 
 #define FIND_KEY_ERROR(name, treeptr, scratch) printf("Could not find %s.\n", name);\
     j65_free_tree(treeptr);\
     free(scratch);
-
-//static uint8_t scratch[1024];
 
 char* alloc_cpy(const char *src) {
     char *dest = malloc(strlen(src) + 1);
@@ -89,9 +88,9 @@ int parse_api_response(CityWeather *cw, FILE *f) {
     description = weather->next;
     icon = description->next;
     temperature = main->child->child; //child->child->next;
-    minimum = temperature->next;
+    minimum = temperature->next->next;
     maximum = minimum->next;
-    humidity = maximum->next;
+    humidity = maximum->next->next;
     //printf("TEMPERATURE=%s\n", temperature->child->string);
     //cw = (CityWeather*)malloc(sizeof(CityWeather));
     cw->city_name = alloc_cpy(name->child->string);

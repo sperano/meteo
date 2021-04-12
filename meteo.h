@@ -1,6 +1,8 @@
 #ifndef _METEO_H
 #define _METEO_H
 
+#define METEO_VERSION "0.1"
+
 #pragma static-locals(on)
 
 #include <stdint.h>
@@ -17,6 +19,7 @@
 #define HIRESON 0xc057
 
 typedef struct CityWeather {
+    char *id;
     char *city_name;
     char *weather;
     char *description;

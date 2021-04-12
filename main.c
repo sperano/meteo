@@ -11,6 +11,7 @@
 #include <peekpoke.h>
 #include "vendor/json65-master/src/json65-file.h"
 #include "vendor/json65-master/src/json65-tree.h"
+#include "config.h"
 #include "meteo.h"
 
 unsigned int VideoBases[] = {
@@ -108,40 +109,139 @@ int main_test2(void) {
     return 0;
 }
 
-int main_test3(void) {
-    const char *filename = "WEATHER.JSON";
+CityWeather* fetch_data(char *city_id) {
+    char filename[15];
     FILE *f;
-    CityWeather cw;
+    CityWeather *cw;
     int rc;
 
-    printf("\nLoading %s...\n", filename);
+    sprintf(filename, "W%s.JSON", city_id);
+
+    printf(">>> Loading %s\n", filename);
     f = fopen(filename, "r");
     if (!f) {
         perror(filename);
-        return 1;
+        return NULL;
     }
-    rc = parse_api_response(&cw, f);
+    cw = malloc(sizeof(CityWeather));
+    if (cw == NULL) {
+        printf("Not enough memory for CityWeather\n");
+        exit(20);
+    }
+    cw->id = city_id;
+    rc = parse_api_response(cw, f);
+    fclose(f);
     if (rc == 0) {
-        printf("City: %s\n", cw.city_name);
-        printf("Weather: %s\n", cw.weather);
-        printf("Description: %s\n", cw.description);
-        printf("Icon: %s\n", cw.icon);
-        printf("Temperature: %d\n", cw.temperature);
-        printf("Minimum: %d\n", cw.minimum);
-        printf("Maximum: %d\n", cw.maximum);
-        printf("Humidity: %d\n", cw.humidity);
+        return cw;
     }
-    free(cw.city_name);
-    free(cw.weather);
-    free(cw.description);
-    free(cw.icon);
-    printf("\n\nPress any key...");
-    cgetc();
-    return main_test2();
+    return NULL;
+}
+
+void print_city_weather(CityWeather *cw) {
+    printf("ID: %s\n", cw->id);
+    printf("City: %s\n", cw->city_name);
+    printf("Weather: %s\n", cw->weather);
+    printf("Description: %s\n", cw->description);
+    printf("Icon: %s\n", cw->icon);
+    printf("Temperature: %d\n", cw->temperature);
+    printf("Minimum: %d\n", cw->minimum);
+    printf("Maximum: %d\n", cw->maximum);
+    printf("Humidity: %d\n", cw->humidity);
+}
+
+//static uint8_t scratch[1024];
+static CityWeather *cities[MAX_CITIES];
+static int city_idx = 0;
+
+void init_cities(MeteoConfig *cfg) {
+    uint8_t i;
+    for (i = 0; i < MAX_CITIES; ++i) {
+        if (cfg->city_ids[i][0]) {
+            cities[i] = fetch_data(cfg->city_ids[i]);
+            if (cities[i]) {
+                //printf("---\n");
+                print_city_weather(cities[i]);
+                //printf("\n\nPress any key...");
+                //cgetc();
+            }
+        }
+    }
+}
+
+void init_city_index() {
+    city_idx = 0;
+    while (!cities[city_idx]) {
+        city_idx++;
+    }
+}
+
+void next_city_index() {
+    for (++city_idx; city_idx < MAX_CITIES; ++city_idx) {
+        if (!cities[city_idx]) {
+            return;
+        }
+    }
+    for (city_idx = 0; city_idx < MAX_CITIES; ++city_idx) {
+        if (!cities[city_idx]) {
+            return;
+        }
+    }
+}
+
+void prev_city_index() {
+    for (--city_idx; city_idx >= 0; --city_idx) {
+        if (!cities[city_idx]) {
+            return;
+        }
+    }
+    for (city_idx = MAX_CITIES - 1; city_idx >= 0; --city_idx) {
+        if (!cities[city_idx]) {
+            return;
+        }
+    }
 }
 
 int main(void) {
+    MeteoConfig *cfg;
+    uint8_t y;
+
+    printf("Meteo version %s\nby Eric Sperano (2021)\n\n", METEO_VERSION);
+    cfg = get_config();
+    print_config(cfg);
+    validate_config(cfg);
+    init_cities(cfg);
+    init_city_index();
+
+    // init graphics
+    POKE(TEXTOFF, 0);
+    POKE(HIRESOFF, 0);
+    POKE(MIXEDON, 0);
+    POKE(PAGE2OFF, 0);
+    //POKE(0xC00D, 0); // 80COLON
+    //POKE(0xC05E, 0); // SETAN3
+    clear_screen();
+
+    for(y = 0; y < 20; y++) {
+        memcpy((void *)VideoBases[y], Bitmap[y], 40);
+    }
+    memcpy((void *)VideoBases[20], TxtLine1, 14);
+    memcpy((void *)VideoBases[21], TxtLine2, 9);
+    memcpy((void *)VideoBases[22], TxtLine3, 17);
+    //memcpy((void *)VideoBases[23], TxtLine2, 5);
+    while(!kbhit());
+
+    // back to text screen
+    POKE(TEXTON, 0);
+    clrscr();
+
+    /*
+    free(cw->city_name);
+    free(cw->weather);
+    free(cw->description);
+    free(cw->icon);
+    */
     //return main_test1();
     //return main_test2();
-    return main_test3();
+    //return main_test3();
+    return 0;
 }
