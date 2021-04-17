@@ -13,6 +13,7 @@
 #include "json65-tree.h"
 #include "config.h"
 #include "meteo.h"
+#include "parser.h"
 
 char TxtLine1[41];
 char TxtLine2[41];

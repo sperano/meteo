@@ -3,8 +3,6 @@
 
 #define METEO_VERSION "0.1"
 
-#pragma static-locals(on)
-
 #include <stdint.h>
 #include <stdio.h>
 
@@ -17,20 +15,6 @@
 #define PAGE2ON 0xc055
 #define HIRESOFF 0xc056
 #define HIRESON 0xc057
-
-typedef struct CityWeather {
-    char *id;
-    char *city_name;
-    char *weather;
-    char *description;
-    char *icon;
-    int16_t temperature;
-    int16_t minimum;
-    int16_t maximum;
-    int16_t humidity;
-} CityWeather;
-
-int parse_api_response(CityWeather *cw, FILE *f);
 
 extern uint8_t Bitmap[20][40];
 

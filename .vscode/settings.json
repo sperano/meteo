@@ -5,6 +5,7 @@
         "json65-tree.h": "c",
         "json65-file.h": "c",
         "apple2.h": "c",
-        "stdlib.h": "c"
+        "stdlib.h": "c",
+        "string.h": "c"
     }
 }

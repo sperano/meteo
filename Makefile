@@ -1,28 +1,27 @@
-TEST_DIR := tests
+_DEPSH := config.h meteo.h parser.h test.h utils.h
+_DEPSC := bitmaps.c config.c main.c parser.c utils.c
+_DEPST := test.c test-utils.c
+_DEPSE := meteo.cfg w5368335.json w6077246.json w6454573.json
 
-all:
-	rm -f meteo.po
-	cl65 -t apple2enh -C apple2enh.cfg -o meteo.bin \
-		-I vendor/json65-master/src/ -I src \
-		src/main.c src/config.c src/meteo.c src/bitmaps.c \
-		vendor/json65-master/src/json65.s \
-		vendor/json65-master/src/json65-file.c \
-		vendor/json65-master/src/json65-string.s \
-		vendor/json65-master/src/json65-tree.c
+DEPSH = $(patsubst %,include/%,$(_DEPSH))
+DEPSC = $(patsubst %,src/%,$(_DEPSC))
+DEPSE = $(patsubst %,etc/%,$(_DEPSE))
+DEPST = $(patsubst %,tests/%,$(_DEPST))
 
+meteo.po: $(DEPSH) $(DEPSC) $(DEPSE)
+	$(MAKE) -C src
 	applecommander -pro140 meteo.po meteo
-	applecommander -as meteo.po meteo <meteo.bin
-	applecommander -p meteo.po meteo.cfg txt <meteo.cfg
-	applecommander -p meteo.po w5368335.json txt <w5368335.json
-	applecommander -p meteo.po w6077246.json txt <w6077246.json
-	applecommander -p meteo.po w6454573.json txt <w6454573.json
-
-test-parser:
-	@cl65 -t sim6502 -o $(TEST_DIR)/test-parser \
-		-I vendor/json65-master/src/ -I src \
-		$(TEST_DIR)/test-parser.c
-	@./run-test.sh $(TEST_DIR)/test-parser
-test: test-parser
+	applecommander -p meteo.po meteo.cfg txt <etc/meteo.cfg
+	applecommander -p meteo.po w5368335.json txt <etc/w5368335.json
+	applecommander -p meteo.po w6077246.json txt <etc/w6077246.json
+	applecommander -p meteo.po w6454573.json txt <etc/w6454573.json
+	applecommander -as meteo.po meteo <src/meteo.bin
 
 clean:
-	rm -fv vendor/json65-master/src/*.o src/*.o
+	$(MAKE) -C src clean
+	$(MAKE) -C tests clean
+	rm -f meteo.po
+
+test: $(DEPSH) $(DEPSC) $(DEPST)
+	$(MAKE) -C src
+	$(MAKE) -C tests

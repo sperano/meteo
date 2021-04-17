@@ -1,5 +1,5 @@
 *.o
 meteo.bin
 meteo.po
-bitmap2c/bitmap2c
-tests/test-parser
+vendor/bitmap2c/bitmap2c
+tests/test
