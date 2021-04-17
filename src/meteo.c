@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "vendor/json65-master/src/json65-file.h"
-#include "vendor/json65-master/src/json65-tree.h"
+#include "json65-file.h"
+#include "json65-tree.h"
 #include "meteo.h"
 #include "config.h"
 

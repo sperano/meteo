@@ -2,3 +2,4 @@
 meteo.bin
 meteo.po
 bitmap2c/bitmap2c
+tests/test-parser
