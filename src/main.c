@@ -3,116 +3,15 @@
 // 01 to 04, then  09 to 013
 // http://openweathermap.org/img/w/01d.png
 // http://openweathermap.org/img/w/01n.png
+#include <conio.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <apple2.h>
-#include <conio.h>
-#include <peekpoke.h>
-#include "json65-file.h"
-#include "json65-tree.h"
+#include "bitmaps.h"
 #include "config.h"
-#include "meteo.h"
+#include "gfx.h"
 #include "parser.h"
-
-char TxtLine1[41];
-char TxtLine2[41];
-char TxtLine3[41];
-char TxtLine4[41];
-
-unsigned int VideoBases[] = {
-    0x400,
-    0x480,
-    0x500,
-    0x580,
-    0x600,
-    0x680,
-    0x700,
-    0x780,
-    0x428,
-    0x4a8,
-    0x528,
-    0x5a8,
-    0x628,
-    0x6a8,
-    0x728,
-    0x7a8,
-    0x450,
-    0x4d0,
-    0x550,
-    0x5d0,
-    0x650,
-    0x6d0,
-    0x750,
-    0x7d0,
-};
-
-void clear_screen() {
-    memset((void *)VideoBases[0], 0, 0x400);
-    memset((void *)VideoBases[20], ' ' + 0x80, 40);
-    memset((void *)VideoBases[21], ' ' + 0x80, 40);
-    memset((void *)VideoBases[22], ' ' + 0x80, 40);
-    memset((void *)VideoBases[23], ' ' + 0x80, 40);
-}
-
-/*
-void pset(unsigned char x, unsigned char y, unsigned char color) {
-    uint16_t addr = VideoBases[y >> 1] + x;
-    uint8_t byte = PEEK(addr);
-
-    if (y & 1) {
-        byte |= color << 4;
-    } else {
-        byte |= color;
-    }
-    POKE(addr, byte);
-}
-
-int main_test1(void) {
-    uint8_t x;
-
-    POKE(TEXTOFF, 0);
-    POKE(HIRESOFF, 0);
-    POKE(MIXEDON, 0);
-    POKE(PAGE2OFF, 0);
-    clear_screen();
-    for(x = 0; x < 40; x++) {
-        pset(x, x, 9);
-        pset(x, 39-x, 3);
-        pset(x, 20, 4);
-        pset(20, x, 6);
-    }
-
-    while(!kbhit());
-
-    POKE(TEXTON, 0);
-    return 0;
-}
-*/
-
-int main_test2(void) {
-    uint8_t y;
-
-    POKE(TEXTOFF, 0);
-    POKE(HIRESOFF, 0);
-    POKE(MIXEDON, 0);
-    POKE(PAGE2OFF, 0);
-    //POKE(0xC00D, 0); // 80COLON
-    //POKE(0xC05E, 0); // SETAN3
-    clear_screen();
-
-    for(y = 0; y < 20; y++) {
-        memcpy((void *)VideoBases[y], Bitmap[y], 40);
-    }
-    memcpy((void *)VideoBases[20], TxtLine1, 40);
-    memcpy((void *)VideoBases[21], TxtLine2, 40);
-    memcpy((void *)VideoBases[22], TxtLine3, 40);
-    while(!kbhit());
-
-    POKE(TEXTON, 0);
-    clrscr();
-    return 0;
-}
+#include "utils.h"
 
 CityWeather* fetch_data(char *city_id) {
     char filename[15];
@@ -121,8 +20,7 @@ CityWeather* fetch_data(char *city_id) {
     int rc;
 
     sprintf(filename, "W%s.JSON", city_id);
-
-    printf(">>> Loading %s\n", filename);
+    //printf(">>> Loading %s\n", filename);
     f = fopen(filename, "r");
     if (!f) {
         perror(filename);
@@ -143,15 +41,16 @@ CityWeather* fetch_data(char *city_id) {
 }
 
 void print_city_weather(CityWeather *cw) {
-    printf("ID: %s\n", cw->id);
-    printf("City: %s\n", cw->city_name);
-    printf("Weather: %s\n", cw->weather);
-    printf("Description: %s\n", cw->description);
-    printf("Icon: %s\n", cw->icon);
-    printf("Temperature: %d\n", cw->temperature);
-    printf("Minimum: %d\n", cw->minimum);
-    printf("Maximum: %d\n", cw->maximum);
-    printf("Humidity: %d\n", cw->humidity);
+    char buffer[5];
+    printf("%s: %s (%s)\n", cw->city_name, cw->weather, cw->description);
+    printf("ID: %s - Icon: %s\n", cw->id, cw->icon);
+    celsius_str(buffer, cw->temperatureC);
+    printf("Temperature: %sC / %dF\n", buffer, cw->temperatureF);
+    celsius_str(buffer, cw->minimumC);
+    printf("Minimum: %sC / %dF\n", buffer, cw->minimumF);
+    celsius_str(buffer, cw->maximumC);
+    printf("Maximum: %sC / %dF\n", buffer, cw->maximumF);
+    //printf("Humidity: %d\n", cw->humidity);
 }
 
 //static uint8_t scratch[1024];
@@ -160,11 +59,23 @@ static int city_idx = 0;
 
 void init_cities(MeteoConfig *cfg) {
     uint8_t i;
+    CityWeather *cw;
     for (i = 0; i < MAX_CITIES; ++i) {
         if (cfg->city_ids[i][0]) {
-            cities[i] = fetch_data(cfg->city_ids[i]);
-            if (cities[i]) {
-                print_city_weather(cities[i]);
+            printf("\n");
+            cw = cities[i] = fetch_data(cfg->city_ids[i]);
+            if (cw) {
+                prepare_gfx_text(cw);
+                if (!strcmp("01d", cw->icon)) {
+                    cw->bitmap = &Bitmap01d;
+                } else if (!strcmp("01n", cw->icon)) {
+                    cw->bitmap = &Bitmap01n;
+                } else if (!strcmp("02n", cw->icon)) {
+                    cw->bitmap = &Bitmap02n;
+                } else {
+                    cw->bitmap = &Bitmap404;
+                }
+                print_city_weather(cw);
             }
         }
     }
@@ -204,27 +115,8 @@ void prev_city_index() {
     }
 }
 
-void update_text() {
-    uint8_t i;
-    sprintf(TxtLine1, "%-40d", city_idx); //cities[city_idx]->city_name);
-    sprintf(TxtLine2, "%-40s", cities[city_idx]->id);
-    sprintf(TxtLine3, "%-40s", cities[city_idx]->city_name);
-    sprintf(TxtLine4, "%40s", cities[city_idx]->city_name);
-    for (i = 0; i < 40; i++) {
-        TxtLine1[i] += 0x80;
-        TxtLine2[i] += 0x80;
-        TxtLine3[i] += 0x80;
-        TxtLine4[i] += 0x80;
-    }
-    memcpy((void *)VideoBases[20], TxtLine1, 40);
-    memcpy((void *)VideoBases[21], TxtLine2, 40);
-    memcpy((void *)VideoBases[22], TxtLine3, 40);
-    memcpy((void *)VideoBases[23], TxtLine4, 40);
-}
-
 int main(void) {
     MeteoConfig *cfg;
-    uint8_t y; //, i;
     char ch;
 
     printf("Meteo version %s\nby Eric Sperano (2021)\n\n", METEO_VERSION);
@@ -233,21 +125,13 @@ int main(void) {
     validate_config(cfg);
     init_cities(cfg);
     init_city_index();
+    cgetc();
 
-    // init graphics
-    POKE(TEXTOFF, 0);
-    POKE(HIRESOFF, 0);
-    POKE(MIXEDON, 0);
-    POKE(PAGE2OFF, 0);
-    //POKE(0xC00D, 0); // 80COLON
-    //POKE(0xC05E, 0); // SETAN3
+    init_gfx();
     clear_screen();
 
-    for(y = 0; y < 20; y++) {
-        memcpy((void *)VideoBases[y], Bitmap[y], 40);
-    }
-    //city_idx=1;
-    update_text();
+    update_gfx_image(cities[city_idx]);
+    update_gfx_text(cities[city_idx]);
     while (1) {
         ch = cgetc();
         switch (ch) {
@@ -256,27 +140,24 @@ int main(void) {
             goto exit;
         case 8:
             prev_city_index();
-            update_text();
+            update_gfx_image(cities[city_idx]);
+            update_gfx_text(cities[city_idx]);
             break;
         case 21:
             next_city_index();
-            update_text();
+            update_gfx_image(cities[city_idx]);
+            update_gfx_text(cities[city_idx]);
             break;
         }
     }
 exit:
-    // back to text screen
-    POKE(TEXTON, 0);
+    exit_gfx();
     clrscr();
-
     /*
     free(cw->city_name);
     free(cw->weather);
     free(cw->description);
     free(cw->icon);
     */
-    //return main_test1();
-    //return main_test2();
-    //return main_test3();
     return 0;
 }

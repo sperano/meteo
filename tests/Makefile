@@ -2,7 +2,7 @@ CC := cl65
 LD := ld65
 CFLAGS := -Cl -t sim6502 -I../include -I../vendor/json65-master/src/
 LDFLAGS := -t sim6502
-_DEPS := config.h meteo.h parser.h test.h utils.h
+_DEPS := bitmaps.h config.h gfx.h parser.h test.h types.h utils.h
 DEPS = $(patsubst %,../include/%,$(_DEPS))
 OBJ = test.o test-utils.o utils.o
 

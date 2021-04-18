@@ -1,8 +1,13 @@
 #ifndef _UTILS_H
 #define _UTILS_H
 
-#include <stdint.h>
+#include "types.h"
 
-uint16_t get_int(const char *src);
+kelvin str_to_kelvin(const char *src);
+uint16_t str_to_int(const char *src);
+celsius kelvin_to_celsius(const kelvin temp);
+fahrenheit celsius_to_fahrenheit(const celsius temp);
+void celsius_str(char *buffer, const celsius temp);
+void prepare_text(CityWeather *cw);
 
 #endif

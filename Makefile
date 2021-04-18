@@ -1,5 +1,5 @@
-_DEPSH := config.h meteo.h parser.h test.h utils.h
-_DEPSC := bitmaps.c config.c main.c parser.c utils.c
+_DEPSH := bitmaps.h config.h gfx.h parser.h test.h types.h utils.h
+_DEPSC := bitmaps.c config.c gfx.c main.c parser.c utils.c
 _DEPST := test.c test-utils.c
 _DEPSE := meteo.cfg w5368335.json w6077246.json w6454573.json
 

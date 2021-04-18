@@ -7,8 +7,7 @@
 
 #define MAX_LINE_LENGTH 60
 
-char *trimw_whitespace(char *str)
-{
+char *trim_whitespace(char *str) {
   char *end;
   while(isspace((unsigned char)*str)) {
     str++;
@@ -39,7 +38,7 @@ MeteoConfig* get_config() {
         // Get each line until there are none left
         while (fgets(line, MAX_LINE_LENGTH, file)) {
             line[strlen(line)-1] = 0; // remove \n
-            pline = trimw_whitespace(line);
+            pline = trim_whitespace(line);
             if (strlen(pline) > 0) {
                 char *ptr_token;
                 if (pline[0] == '#') {

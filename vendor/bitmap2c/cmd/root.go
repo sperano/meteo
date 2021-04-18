@@ -30,6 +30,7 @@ on the command line, pass color mappings:
 			colorMaps := make(map[string]int)
 			colorMaps["0000000000000000"] = 0
 			colorMaps["000000000000ffff"] = 0
+			colorMaps["ffffffffffffffff"] = 15
 			for _, arg := range args {
 				tokens := strings.Split(arg, "=")
 				if len(tokens) != 2 {

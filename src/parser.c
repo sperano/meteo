@@ -80,10 +80,13 @@ int parse_api_response(CityWeather *cw, FILE *f) {
     cw->weather = alloc_cpy(weather->child->string);
     cw->description = alloc_cpy(description->child->string);
     cw->icon = alloc_cpy(icon->child->string);
-    cw->temperature = get_int(temperature->child->string);
-    cw->minimum = get_int(minimum->child->string);
-    cw->maximum = get_int(maximum->child->string);
-    cw->humidity = get_int(humidity->child->string);
+    cw->temperatureC = kelvin_to_celsius(str_to_kelvin(temperature->child->string));
+    cw->temperatureF = celsius_to_fahrenheit(cw->temperatureC);
+    cw->minimumC = kelvin_to_celsius(str_to_kelvin(minimum->child->string));
+    cw->minimumF = celsius_to_fahrenheit(cw->minimumC);
+    cw->maximumC = kelvin_to_celsius(str_to_kelvin(maximum->child->string));
+    cw->maximumF = celsius_to_fahrenheit(cw->maximumC);
+    cw->humidity = str_to_int(humidity->child->string);
 
     j65_free_tree(&tree);
     free(scratch);

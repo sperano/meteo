@@ -1,12 +1,13 @@
+VERSION := 0.2
 IDIR := ../include
 CC := cl65
 LD := ld65
-CFLAGS := -Cl -O -t apple2enh -C apple2enh.cfg -I../include -I../vendor/json65-master/src/
+CFLAGS := -DMETEO_VERSION=\"$(VERSION)\" -Cl -O -t apple2enh -C apple2enh.cfg -I../include -I../vendor/json65-master/src/
 LDFLAGS := -t apple2enh
-_DEPS := config.h meteo.h parser.h utils.h
+_DEPS := bitmaps.h config.h gfx.h parser.h types.h utils.h
 DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 
-OBJ = bitmaps.o config.o main.o parser.o utils.o json65.o json65-file.o json65-string.o json65-tree.o
+OBJ = bitmaps.o config.o gfx.o main.o parser.o utils.o json65.o json65-file.o json65-string.o json65-tree.o
 
 meteo.bin: $(OBJ)
 	$(LD) $(LDFLAGS) -o $@ $^ apple2enh.lib
