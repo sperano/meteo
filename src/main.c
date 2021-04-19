@@ -117,6 +117,7 @@ int main(void) {
 */
     init_cities(cfg);
     //city_idx = 0;
+
     //cgetc();
 
     init_gfx();
