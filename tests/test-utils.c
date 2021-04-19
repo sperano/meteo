@@ -50,8 +50,8 @@ void test_prepare_text(void) {
     //printf("76F          72F          81F           !\n");
     //printf("%s!\n", cw.text_lines[3]);
     assert(!strcmp("Los Altos: Cloudy (some clouds)         ", cw.text_lines[0]));
-    assert(!strcmp("                                        ", cw.text_lines[1]));
-    assert(!strcmp("24.4C   Min: 22.1C   Max: 27.3C         ", cw.text_lines[2]));
-    assert(!strcmp("76F          72F          81F           ", cw.text_lines[3]));
+    assert(!strcmp("24.4C  /  Min: 22.1C  /  Max: 27.3C     ", cw.text_lines[1]));
+    assert(!strcmp("                                        ", cw.text_lines[2]));
+    //assert(!strcmp("C:Configure | U:Unit | Q:Quit           ", cw.text_lines[3]));
 
 }

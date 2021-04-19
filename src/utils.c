@@ -6,7 +6,6 @@
 uint16_t str_to_int(const char *src) {
     uint16_t value = 0;
     uint8_t dec = 0;
-
     char *ptr_token = strchr(src, '.');
     if (ptr_token == NULL) {
         value = atoi(src);
@@ -61,66 +60,46 @@ void celsius_str(char *buffer, const celsius temp) {
 
 void prepare_text(CityWeather *cw) {
     int i, l;
+    char *txtline;
     char *p;
-    strcpy(cw->text_lines[0], cw->city_name);
-    strcat(cw->text_lines[0], ": ");
-    strcat(cw->text_lines[0], cw->weather);
-    strcat(cw->text_lines[0], " (");
-    strcat(cw->text_lines[0], cw->description);
-    strcat(cw->text_lines[0], ")");
-    l = strlen(cw->text_lines[0]);
+    // first line //
+    txtline = cw->text_lines[0];
+    strcpy(txtline, cw->city_name);
+    strcat(txtline, ": ");
+    strcat(txtline, cw->weather);
+    strcat(txtline, " (");
+    strcat(txtline, cw->description);
+    strcat(txtline, ")");
+    l = strlen(txtline);
+    // TODO use memset
+    /*
     for (i = l; i < 40; ++i) {
-        cw->text_lines[0][i] = ' ';
+        txtline[i] = ' ';
     }
-    cw->text_lines[0][40] = 0;
-    // line 1
-    memset(cw->text_lines[1], ' ', 40);
-    cw->text_lines[1][40] = 0;
-    // line 2
-    celsius_str(cw->text_lines[2], cw->temperatureC);
-    strcat(cw->text_lines[2], "C");
-    l = strlen(cw->text_lines[2]);
-    for (i = l; i < 8; ++i) {
-        cw->text_lines[2][i] = ' ';
-    }
-    cw->text_lines[2][i] = 0;
-    strcat(cw->text_lines[2], "Min: ");
-    p = cw->text_lines[2] + strlen(cw->text_lines[2]);
+    */
+    memset(txtline + l, ' ', 40 - l);
+    txtline[40] = 0;
+    // 2nd line
+    txtline = cw->text_lines[1];
+    celsius_str(txtline, cw->temperatureC);
+    strcat(txtline, "C  /  Min: ");
+    p = txtline + strlen(txtline);
     celsius_str(p, cw->minimumC);
-    strcat(cw->text_lines[2], "C");
-    l = strlen(cw->text_lines[2]);
-    for (i = l; i < 21; ++i) {
-        cw->text_lines[2][i] = ' ';
-    }
-    cw->text_lines[2][i] = 0;
-    strcat(cw->text_lines[2], "Max: ");
-    p = cw->text_lines[2] + strlen(cw->text_lines[2]);
+    strcat(txtline, "C  /  Max: ");
+    p = txtline + strlen(txtline);
     celsius_str(p, cw->maximumC);
-    strcat(cw->text_lines[2], "C");
-    l = strlen(cw->text_lines[2]);
-    for (i = l; i < 40; ++i) {
-        cw->text_lines[2][i] = ' ';
-    }
-    cw->text_lines[2][i] = 0;
-    // line 3
-    sprintf(cw->text_lines[3], "%dF", cw->temperatureF);
-    l = strlen(cw->text_lines[3]);
-    for (i = l; i < 13; ++i) {
-        cw->text_lines[3][i] = ' ';
-    }
-    cw->text_lines[3][i] = 0;
-    p = cw->text_lines[3] + strlen(cw->text_lines[3]);
-    sprintf(p, "%dF", cw->minimumF);
-    l = strlen(cw->text_lines[3]);
-    for (i = l; i < 26; ++i) {
-        cw->text_lines[3][i] = ' ';
-    }
-    cw->text_lines[3][i] = 0;
-    p = cw->text_lines[3] + strlen(cw->text_lines[3]);
-    sprintf(p, "%dF", cw->maximumF);
-    l = strlen(cw->text_lines[3]);
-    for (i = l; i < 40; ++i) {
-        cw->text_lines[3][i] = ' ';
-    }
-    cw->text_lines[3][i] = 0;
+    strcat(txtline, "C");
+    l = strlen(txtline);
+    memset(txtline + l, ' ', 40 - l);
+    txtline[40] = 0;
+    // 3rd line
+    txtline = cw->text_lines[2];
+    memset(txtline, ' ', 40);
+    txtline[40] = 0;
+    // 4th line
+    txtline = cw->text_lines[3];
+    strcpy(txtline, "C:Configure | U:Unit | Q:Quit");
+    l = strlen(txtline);
+    memset(txtline + l, ' ', 40 - l);
+    txtline[40] = 0;
 }

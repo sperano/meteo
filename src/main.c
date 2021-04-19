@@ -12,6 +12,7 @@
 #include "gfx.h"
 #include "parser.h"
 #include "utils.h"
+#include "ip65.h"
 
 CityWeather* fetch_data(char *city_id) {
     char filename[15];
@@ -40,6 +41,7 @@ CityWeather* fetch_data(char *city_id) {
     return NULL;
 }
 
+/*
 void print_city_weather(CityWeather *cw) {
     char buffer[5];
     printf("%s: %s (%s)\n", cw->city_name, cw->weather, cw->description);
@@ -52,6 +54,7 @@ void print_city_weather(CityWeather *cw) {
     printf("Maximum: %sC / %dF\n", buffer, cw->maximumF);
     //printf("Humidity: %d\n", cw->humidity);
 }
+*/
 
 //static uint8_t scratch[1024];
 static CityWeather *cities[MAX_CITIES];
@@ -66,16 +69,24 @@ void init_cities(MeteoConfig *cfg) {
             cw = cities[i] = fetch_data(cfg->city_ids[i]);
             if (cw) {
                 prepare_gfx_text(cw);
+                /*
                 if (!strcmp("01d", cw->icon)) {
                     cw->bitmap = &Bitmap01d;
                 } else if (!strcmp("01n", cw->icon)) {
                     cw->bitmap = &Bitmap01n;
+                } else if (!strcmp("02d", cw->icon)) {
+                    cw->bitmap = &Bitmap02d;
                 } else if (!strcmp("02n", cw->icon)) {
                     cw->bitmap = &Bitmap02n;
+                } else if (!strcmp("04d", cw->icon)) {
+                    cw->bitmap = &Bitmap04d;
+                } else if (!strcmp("04n", cw->icon)) {
+                    cw->bitmap = &Bitmap04d;
                 } else {
+                    */
                     cw->bitmap = &Bitmap404;
-                }
-                print_city_weather(cw);
+                //}
+                //print_city_weather(cw);
             }
         }
     }
@@ -118,14 +129,20 @@ void prev_city_index() {
 int main(void) {
     MeteoConfig *cfg;
     char ch;
+    uint8_t eth_init = ETH_INIT_DEFAULT;
 
     printf("Meteo version %s\nby Eric Sperano (2021)\n\n", METEO_VERSION);
     cfg = get_config();
     print_config(cfg);
     validate_config(cfg);
+
+    if (ip65_init(eth_init)) {
+        printf("Error initializing ethernet in slot #%d\n", eth_init);
+        exit(1);
+    }
     init_cities(cfg);
     init_city_index();
-    cgetc();
+    //cgetc();
 
     init_gfx();
     clear_screen();
