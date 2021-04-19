@@ -1,77 +1,66 @@
 #include "config.h"
+#include <conio.h>
 #include <ctype.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include "utils.h"
 
-#define MAX_LINE_LENGTH 60
+/*
 
-char *trim_whitespace(char *str) {
-  char *end;
-  while(isspace((unsigned char)*str)) {
-    str++;
-  }
-  if(*str == 0) {
-    return str;
-  }
-  end = str + strlen(str) - 1;
-  while(end > str && isspace((unsigned char)*end)) {
-      end--;
-  }
-  end[1] = '\0';
-  return str;
-}
+Config file structure:
 
-MeteoConfig* get_config() {
-    FILE *file;
-    char line[MAX_LINE_LENGTH] = {0};
-    char *pline; //, *ptoken;
++----+----+
+|  1 |  2 | Magic Number: E5 76
++----+----+
+|  3 | Version
++----+
+|  4 | Ethernet Slot
++----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+|  5 |  6 |  7 |  8 |  9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25 | 26 | 27 | 28 | 29 | 30 | 31 | 32 | 33 | 34 | 35 | 36 | AppId
++----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+| 37 | Cities count
++----+----+----+----+----+----+----+----+
+| 38 | 39 | 40 | 41 | 42 | 43 | 44 | 45 | CityID #1 (Always 8 bytes)
++----+----+----+----+----+----+----+----+
+| 46 | 47 | 48 | 49 | 50 | 51 | 52 | 53 | CityID #2
++----+----+----+----+----+----+----+----+
+ Etc...
+
+*/
+
+MeteoConfig* read_config() {
     static MeteoConfig config;
+    uint8_t byte, i, j;
+    char *appid = config.app_id;
 
-    memset(&config, 0, sizeof(config));
-    file = fopen(METEO_CONFIG_FILENAME, "r");
+    FILE *file = fopen(METEO_CONFIG_FILENAME2, "r");
     if (file == NULL) {
-        printf("Can't open: %s\n", METEO_CONFIG_FILENAME);
-        exit(1);
+        fail("Can't open config file");
     }
-    printf(">>> Loading config: %s\n", METEO_CONFIG_FILENAME);
-    // Get each line until there are none left
-    while (fgets(line, MAX_LINE_LENGTH, file)) {
-        line[strlen(line)-1] = 0; // remove \n
-        pline = trim_whitespace(line);
-        if (strlen(pline) > 0) {
-            char *ptr_token;
-            if (pline[0] == '#') {
-                continue;
-            }
-            ptr_token = strchr(pline, '=');
-            if (ptr_token == NULL) {
-                printf("Invalid config line: \"%s\"\n", pline);
-                exit(10);
-            } else {
-                *ptr_token = 0;
-                ptr_token++;
-                if (strcmp("app_id", pline) == 0) {
-                    strcpy(config.app_id, ptr_token);
-                }
-                if (strcmp("city0_id", pline) == 0) {
-                    strcpy(config.city_ids[0], ptr_token);
-                }
-                if (strcmp("city1_id", pline) == 0) {
-                    strcpy(config.city_ids[1], ptr_token);
-                }
-                if (strcmp("city2_id", pline) == 0) {
-                    strcpy(config.city_ids[2], ptr_token);
-                }
-                if (strcmp("city3_id", pline) == 0) {
-                    strcpy(config.city_ids[3], ptr_token);
-                }
-                if (strcmp("city4_id", pline) == 0) {
-                    strcpy(config.city_ids[4], ptr_token);
-                }
-            }
+    if ((byte = getc(file)) != 0xe5) { // magic number
+        fail("Not a valid config file");
+    }
+    if ((byte = getc(file)) != 0x76) { // magic number
+        fail("Not a valid config file");
+    }
+    getc(file); // version
+    config.ethernet_slot = getc(file); // ethernet slot
+    for (i = 0; i < 32; ++i) {
+        config.app_id[i] = getc(file); // app id
+    }
+    config.app_id[32] = 0;
+
+    config.nb_cities = getc(file);
+    //printf("nb_cities=%d\n", nb_cities);
+    config.city_ids = safe_malloc(config.nb_cities * sizeof(char*));
+    for (i = 0; i < config.nb_cities; ++i) {
+        config.city_ids[i] = safe_malloc(9 * sizeof(char));
+        for (j = 0; j < 8; ++j) {
+            config.city_ids[i][j] = getc(file); // city id
         }
+        config.city_ids[8] = 0;
     }
     fclose(file);
     return &config;
@@ -80,7 +69,7 @@ MeteoConfig* get_config() {
 void print_config(MeteoConfig* cfg) {
     uint8_t i;
     printf("AppID: %s\n", cfg->app_id);
-    for (i = 0; i < MAX_CITIES; ++i) {
+    for (i = 0; i < cfg->nb_cities; ++i) {
         if (cfg->city_ids[i][0]) {
             printf("CityID[%d]: %s\n", i, cfg->city_ids[i]);
         }
@@ -91,16 +80,15 @@ void validate_config(MeteoConfig* cfg) {
     uint8_t at_least_one = 0;
     uint8_t i;
     if (strlen(cfg->app_id) != 32) {
-        printf("Expected a string of 32 characters for app_id, got %d\n", strlen(cfg->app_id));
-        exit(100);
+        fail("Invalid Weather App Id");
     }
-    for (i = 0; i < MAX_CITIES && !at_least_one; ++i) {
-        if (strlen(cfg->city_ids[i]) > 0) {
-            at_least_one = 1;
-        }
+    if (cfg->nb_cities == 0) {
+        fail("No cities configured.");
     }
-    if (!at_least_one) {
-        printf("No cities configured.\n");
-        exit(101);
-    }
+}
+
+void config_screen(MeteoConfig *cfg) {
+    clrscr();
+    printf("Meteo %s Configuration\n", METEO_VERSION);
+    cgetc();
 }

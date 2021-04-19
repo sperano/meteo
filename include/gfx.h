@@ -13,9 +13,10 @@
 #define HIRESOFF 0xc056
 #define HIRESON 0xc057
 
-void init_gfx();
-void exit_gfx();
-void clear_screen();
+void init_gfx(void);
+void exit_gfx(void);
+void clear_screen(void);
+void set_menu_text(void);
 void prepare_gfx_text(CityWeather *cw);
 void update_gfx_text(CityWeather *cw);
 void update_gfx_image(CityWeather *cw);

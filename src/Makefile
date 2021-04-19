@@ -10,7 +10,8 @@ DEPS = $(patsubst %,../include/%,$(_DEPS))
 OBJ = bitmaps.o config.o gfx.o main.o parser.o utils.o json65.o json65-file.o json65-string.o json65-tree.o
 
 meteo.bin: $(OBJ)
-	$(LD) $(LDFLAGS) -o $@ $^ apple2enh.lib ../vendor/ip65/ip65_tcp.lib ../vendor/ip65/ip65_apple2.lib
+	$(LD) $(LDFLAGS) -o $@ $^ apple2enh.lib
+#../vendor/ip65/ip65_tcp.lib ../vendor/ip65/ip65_apple2.lib
 
 %.o: %.s
 	$(CC) $(CFLAGS) -c $< -o $@

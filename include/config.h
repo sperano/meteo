@@ -1,16 +1,21 @@
 #ifndef _METEO_CONFIG_H
 #define _METEO_CONFIG_H
 
-#define METEO_CONFIG_FILENAME "METEO.CFG"
-#define MAX_CITIES 5
+#define METEO_CONFIG_FILENAME2 "METEO.CFG"
+
+#include <stdint.h>
 
 typedef struct MeteoConfig {
+    uint8_t ethernet_slot;
     char app_id[33];
-    char city_ids[MAX_CITIES][9];
+    uint8_t nb_cities;
+    char **city_ids;
 } MeteoConfig;
 
-MeteoConfig* get_config();
+MeteoConfig* read_config();
+void save_config(MeteoConfig *config);
 void validate_config(MeteoConfig *cfg);
 void print_config(MeteoConfig *cfg);
+void config_screen(MeteoConfig *cfg);
 
 #endif

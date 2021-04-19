@@ -1,6 +1,6 @@
 // check https://github.com/pedgarcia/a2graph/blob/master/a2graph.c
 // check https://github.com/ppelleti/json65
-// 01 to 04, then  09 to 013
+// 01 to 04, then  09 to 013, maybe not 12?
 // http://openweathermap.org/img/w/01d.png
 // http://openweathermap.org/img/w/01n.png
 #include <conio.h>
@@ -27,11 +27,7 @@ CityWeather* fetch_data(char *city_id) {
         perror(filename);
         return NULL;
     }
-    cw = malloc(sizeof(CityWeather));
-    if (cw == NULL) {
-        printf("Not enough memory for CityWeather\n");
-        exit(20);
-    }
+    cw = safe_malloc(sizeof(CityWeather));
     cw->id = city_id;
     rc = parse_api_response(cw, f);
     fclose(f);
@@ -41,7 +37,6 @@ CityWeather* fetch_data(char *city_id) {
     return NULL;
 }
 
-/*
 void print_city_weather(CityWeather *cw) {
     char buffer[5];
     printf("%s: %s (%s)\n", cw->city_name, cw->weather, cw->description);
@@ -54,119 +49,104 @@ void print_city_weather(CityWeather *cw) {
     printf("Maximum: %sC / %dF\n", buffer, cw->maximumF);
     //printf("Humidity: %d\n", cw->humidity);
 }
-*/
 
 //static uint8_t scratch[1024];
-static CityWeather *cities[MAX_CITIES];
+static CityWeather **cities;
 static int city_idx = 0;
+static CityWeather *current_city;
 
 void init_cities(MeteoConfig *cfg) {
     uint8_t i;
-    CityWeather *cw;
-    for (i = 0; i < MAX_CITIES; ++i) {
-        if (cfg->city_ids[i][0]) {
-            printf("\n");
-            cw = cities[i] = fetch_data(cfg->city_ids[i]);
-            if (cw) {
-                prepare_gfx_text(cw);
-                /*
-                if (!strcmp("01d", cw->icon)) {
-                    cw->bitmap = &Bitmap01d;
-                } else if (!strcmp("01n", cw->icon)) {
-                    cw->bitmap = &Bitmap01n;
-                } else if (!strcmp("02d", cw->icon)) {
-                    cw->bitmap = &Bitmap02d;
-                } else if (!strcmp("02n", cw->icon)) {
-                    cw->bitmap = &Bitmap02n;
-                } else if (!strcmp("04d", cw->icon)) {
-                    cw->bitmap = &Bitmap04d;
-                } else if (!strcmp("04n", cw->icon)) {
-                    cw->bitmap = &Bitmap04d;
-                } else {
-                    */
-                    cw->bitmap = &Bitmap404;
-                //}
-                //print_city_weather(cw);
+
+    cities = safe_malloc(cfg->nb_cities * sizeof(CityWeather*));
+    for (i = 0; i < cfg->nb_cities; ++i) {
+        printf("\n");
+        current_city = cities[i] = fetch_data(cfg->city_ids[i]);
+        if (current_city) {
+            prepare_gfx_text(current_city);
+            if (!strcmp("01d", current_city->icon)) {
+                current_city->bitmap = &Bitmap01d;
+            } else if (!strcmp("01n", current_city->icon)) {
+                current_city->bitmap = &Bitmap01n;
+            } else if (!strcmp("02d", current_city->icon)) {
+                current_city->bitmap = &Bitmap02d;
+            } else if (!strcmp("02n", current_city->icon)) {
+                current_city->bitmap = &Bitmap02n;
+            } else if (!strcmp("04d", current_city->icon)) {
+                current_city->bitmap = &Bitmap04d;
+            } else if (!strcmp("04n", current_city->icon)) {
+                current_city->bitmap = &Bitmap04d;
+            } else {
+                current_city->bitmap = &Bitmap404;
             }
+            print_city_weather(current_city);
         }
     }
 }
 
-void init_city_index() {
-    city_idx = 0;
-    while (!cities[city_idx]) {
-        city_idx++;
+void next_city_index(MeteoConfig *cfg) {
+    if (++city_idx == cfg->nb_cities) {
+        city_idx = 0;
     }
+    current_city = cities[city_idx];
 }
 
-void next_city_index() {
-    ++city_idx;
-    for (; city_idx < MAX_CITIES; ++city_idx) {
-        if (cities[city_idx]) {
-            return;
-        }
+void prev_city_index(MeteoConfig *cfg) {
+    if (++city_idx == 0) {
+        city_idx = cfg->nb_cities - 1;
     }
-    for (city_idx = 0; city_idx < MAX_CITIES; ++city_idx) {
-        if (cities[city_idx]) {
-            return;
-        }
-    }
-}
-
-void prev_city_index() {
-    for (--city_idx; city_idx >= 0; --city_idx) {
-        if (cities[city_idx]) {
-            return;
-        }
-    }
-    for (city_idx = MAX_CITIES - 1; city_idx >= 0; --city_idx) {
-        if (cities[city_idx]) {
-            return;
-        }
-    }
+    current_city = cities[city_idx];
 }
 
 int main(void) {
     MeteoConfig *cfg;
+    //CityWeather *cw;
     char ch;
-    uint8_t eth_init = ETH_INIT_DEFAULT;
+    //uint8_t eth_init = ETH_INIT_DEFAULT;
 
     printf("Meteo version %s\nby Eric Sperano (2021)\n\n", METEO_VERSION);
-    cfg = get_config();
+    cfg = read_config();
     print_config(cfg);
     validate_config(cfg);
 
+/*
+
     if (ip65_init(eth_init)) {
-        printf("Error initializing ethernet in slot #%d\n", eth_init);
-        exit(1);
+        fail("Error initializing ethernet");
     }
+*/
     init_cities(cfg);
-    init_city_index();
+    //city_idx = 0;
     //cgetc();
 
     init_gfx();
     clear_screen();
-
-    update_gfx_image(cities[city_idx]);
-    update_gfx_text(cities[city_idx]);
+    current_city = cities[city_idx];
+    set_menu_text();
     while (1) {
+        update_gfx_image(current_city);
+        update_gfx_text(current_city);
         ch = cgetc();
         switch (ch) {
+        case 'c':
+        case 'C':
+            exit_gfx();
+            config_screen(cfg);
+            init_gfx();
+            set_menu_text();
+            break;
         case 'q':
         case 'Q':
             goto exit;
         case 8:
-            prev_city_index();
-            update_gfx_image(cities[city_idx]);
-            update_gfx_text(cities[city_idx]);
+            prev_city_index(cfg);
             break;
         case 21:
-            next_city_index();
-            update_gfx_image(cities[city_idx]);
-            update_gfx_text(cities[city_idx]);
+            next_city_index(cfg);
             break;
         }
     }
+
 exit:
     exit_gfx();
     clrscr();

@@ -28,7 +28,7 @@ typedef struct {
     fahrenheit minimumF;
     fahrenheit maximumF;
     int16_t humidity;
-    char text_lines[4][41];
+    char text_lines[3][41];
 } CityWeather;
 
 #endif

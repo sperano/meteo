@@ -59,11 +59,10 @@ void celsius_str(char *buffer, const celsius temp) {
 }
 
 void prepare_text(CityWeather *cw) {
-    int i, l;
-    char *txtline;
+    int l;
+    char *txtline = cw->text_lines[0];
     char *p;
     // first line //
-    txtline = cw->text_lines[0];
     strcpy(txtline, cw->city_name);
     strcat(txtline, ": ");
     strcat(txtline, cw->weather);
@@ -71,12 +70,6 @@ void prepare_text(CityWeather *cw) {
     strcat(txtline, cw->description);
     strcat(txtline, ")");
     l = strlen(txtline);
-    // TODO use memset
-    /*
-    for (i = l; i < 40; ++i) {
-        txtline[i] = ' ';
-    }
-    */
     memset(txtline + l, ' ', 40 - l);
     txtline[40] = 0;
     // 2nd line
@@ -93,13 +86,26 @@ void prepare_text(CityWeather *cw) {
     memset(txtline + l, ' ', 40 - l);
     txtline[40] = 0;
     // 3rd line
-    txtline = cw->text_lines[2];
-    memset(txtline, ' ', 40);
-    txtline[40] = 0;
+    //txtline = cw->text_lines[2];
+    //memset(txtline, ' ', 40);
+    //txtline[40] = 0;
     // 4th line
-    txtline = cw->text_lines[3];
-    strcpy(txtline, "C:Configure | U:Unit | Q:Quit");
-    l = strlen(txtline);
-    memset(txtline + l, ' ', 40 - l);
-    txtline[40] = 0;
+    //txtline = cw->text_lines[3];
+    //strcpy(txtline, "C:Configure | U:Unit | Q:Quit");
+    //l = strlen(txtline);
+    //memset(txtline + l, ' ', 40 - l);
+    //txtline[40] = 0;
+}
+
+void fail(char *msg) {
+    printf("%s\n", msg);
+    exit(1);
+}
+
+void* safe_malloc(size_t size) {
+    void *p = malloc(size);
+    if (p == NULL) {
+        fail("Out of memory");
+    }
+    return p;
 }

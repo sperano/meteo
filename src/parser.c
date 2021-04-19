@@ -9,16 +9,14 @@
 
 #define SCRATCH_SIZE 1024
 
+/*
 #define FIND_KEY_ERROR(name, treeptr, scratch) printf("Could not find %s.\n", name);\
     j65_free_tree(treeptr);\
     free(scratch);
+*/
 
-char* alloc_cpy(const char *src) {
-    char *dest = malloc(strlen(src) + 1);
-    if (dest == NULL) {
-        printf("Out of memory");
-        exit(5);
-    }
+char*  alloc_cpy(const char *src) {
+    char *dest = safe_malloc(strlen(src) + 1);
     strcpy(dest, src);
     return dest;
 }
@@ -31,10 +29,7 @@ int parse_api_response(CityWeather *cw, FILE *f) {
     uint8_t *scratch;
 
     j65_init_tree(&tree);
-    scratch = malloc(SCRATCH_SIZE);
-    if (scratch == NULL) {
-        printf("Not enough memory for scratch\n");
-    }
+    scratch = safe_malloc(SCRATCH_SIZE);
     ret = j65_parse_file(f,                // file to parse
                         scratch,           // pointer to a scratch buffer
                         SCRATCH_SIZE,      // length of scratch buffer
@@ -47,25 +42,19 @@ int parse_api_response(CityWeather *cw, FILE *f) {
                         "weather.json",    // used in error messages
                         NULL);             // no custom error func
     if (ret < 0) {
-        printf("Error parsing JSON: %d", ret);
-        fclose(f);
-        free(scratch);
-        return 1;
+        fail("Error parsing JSON");
     }
     name = j65_find_key(&tree, tree.root, "name");
     if (name == NULL) {
-        FIND_KEY_ERROR("name", &tree, scratch);
-        return 2;
+        fail("Can't find key 'name'");
     }
     weather_obj = j65_find_key(&tree, tree.root, "weather");
     if (weather_obj == NULL) {
-        FIND_KEY_ERROR("weather", &tree, scratch);
-        return 3;
+        fail("Can't find key 'weather'");
     }
     main = j65_find_key(&tree, tree.root, "main");
     if (main == NULL) {
-        FIND_KEY_ERROR("main", &tree, scratch);
-        return 4;
+        fail("Can't find key 'main'");
     }
     weather = weather_obj->child->child->child->next;
     description = weather->next;
@@ -73,9 +62,8 @@ int parse_api_response(CityWeather *cw, FILE *f) {
     temperature = main->child->child; //child->child->next;
     minimum = temperature->next->next;
     maximum = minimum->next;
-    humidity = maximum->next->next;
+    //humidity = maximum->next->next;
     //printf("TEMPERATURE=%s\n", temperature->child->string);
-    //cw = (CityWeather*)malloc(sizeof(CityWeather));
     cw->city_name = alloc_cpy(name->child->string);
     cw->weather = alloc_cpy(weather->child->string);
     cw->description = alloc_cpy(description->child->string);
@@ -86,7 +74,7 @@ int parse_api_response(CityWeather *cw, FILE *f) {
     cw->minimumF = celsius_to_fahrenheit(cw->minimumC);
     cw->maximumC = kelvin_to_celsius(str_to_kelvin(maximum->child->string));
     cw->maximumF = celsius_to_fahrenheit(cw->maximumC);
-    cw->humidity = str_to_int(humidity->child->string);
+    //cw->humidity = str_to_int(humidity->child->string);
 
     j65_free_tree(&tree);
     free(scratch);

@@ -33,7 +33,7 @@
 #include "json65-tree.h"
 #include "json65-print.h"
 
-static uint8_t scratch[2048];
+static uint8_t scratch[512];
 static j65_tree tree;
 
 static void my_exit (int code) __attribute__ ((noreturn)) {
