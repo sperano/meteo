@@ -13,6 +13,7 @@ typedef struct MeteoConfig {
 } MeteoConfig;
 
 MeteoConfig* read_config();
+void free_config(MeteoConfig *cfg);
 void save_config(MeteoConfig *config);
 void validate_config(MeteoConfig *cfg);
 void print_config(MeteoConfig *cfg);

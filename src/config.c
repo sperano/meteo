@@ -53,17 +53,25 @@ MeteoConfig* read_config() {
     config.app_id[32] = 0;
 
     config.nb_cities = getc(file);
-    //printf("nb_cities=%d\n", nb_cities);
+    //printf("nb_cities=%d\n", config.nb_cities);
     config.city_ids = safe_malloc(config.nb_cities * sizeof(char*));
     for (i = 0; i < config.nb_cities; ++i) {
         config.city_ids[i] = safe_malloc(9 * sizeof(char));
         for (j = 0; j < 8; ++j) {
             config.city_ids[i][j] = getc(file); // city id
         }
-        config.city_ids[8] = 0;
+        config.city_ids[i][8] = 0;
     }
     fclose(file);
     return &config;
+}
+
+void free_config(MeteoConfig* cfg) {
+    uint8_t i;
+    for (i = 0; i < cfg->nb_cities; ++i) {
+        free(cfg->city_ids[i]);
+    }
+    free(cfg->city_ids);
 }
 
 void print_config(MeteoConfig* cfg) {

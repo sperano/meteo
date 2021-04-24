@@ -21,19 +21,21 @@ CityWeather* fetch_data(char *city_id) {
     int rc;
 
     sprintf(filename, "W%s.JSON", city_id);
-    //printf(">>> Loading %s\n", filename);
+    printf(">>> Loading %s\n", filename);
     f = fopen(filename, "r");
     if (!f) {
         perror(filename);
         return NULL;
     }
     cw = safe_malloc(sizeof(CityWeather));
+    //strcpy(cw->id, city_id);
     cw->id = city_id;
     rc = parse_api_response(cw, f);
     fclose(f);
     if (rc == 0) {
         return cw;
     }
+    free(cw);
     return NULL;
 }
 
@@ -52,7 +54,7 @@ void print_city_weather(CityWeather *cw) {
 
 //static uint8_t scratch[1024];
 static CityWeather **cities;
-static int city_idx = 0;
+static int8_t city_idx = 0;
 static CityWeather *current_city;
 
 void init_cities(MeteoConfig *cfg) {
@@ -63,7 +65,7 @@ void init_cities(MeteoConfig *cfg) {
         printf("\n");
         current_city = cities[i] = fetch_data(cfg->city_ids[i]);
         if (current_city) {
-            prepare_gfx_text(current_city);
+            //prepare_gfx_text(current_city);
             if (!strcmp("01d", current_city->icon)) {
                 current_city->bitmap = &Bitmap01d;
             } else if (!strcmp("01n", current_city->icon)) {
@@ -92,7 +94,7 @@ void next_city_index(MeteoConfig *cfg) {
 }
 
 void prev_city_index(MeteoConfig *cfg) {
-    if (++city_idx == 0) {
+    if (--city_idx < 0) {
         city_idx = cfg->nb_cities - 1;
     }
     current_city = cities[city_idx];
@@ -117,8 +119,8 @@ int main(void) {
 */
     init_cities(cfg);
     //city_idx = 0;
-
-    //cgetc();
+    //free_config(cfg);
+    cgetc();
 
     init_gfx();
     clear_screen();
