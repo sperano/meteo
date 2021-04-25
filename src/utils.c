@@ -58,45 +58,6 @@ void celsius_str(char *buffer, const celsius temp) {
     }
 }
 
-void prepare_text(CityWeather *cw) {
-    int l;
-    char *txtline = cw->text_lines[0];
-    char *p;
-    // first line //
-    strcpy(txtline, cw->city_name);
-    strcat(txtline, ": ");
-    strcat(txtline, cw->weather);
-    strcat(txtline, " (");
-    strcat(txtline, cw->description);
-    strcat(txtline, ")");
-    l = strlen(txtline);
-    memset(txtline + l, ' ', 40 - l);
-    txtline[40] = 0;
-    // 2nd line
-    txtline = cw->text_lines[1];
-    celsius_str(txtline, cw->temperatureC);
-    strcat(txtline, "C  /  Min: ");
-    p = txtline + strlen(txtline);
-    celsius_str(p, cw->minimumC);
-    strcat(txtline, "C  /  Max: ");
-    p = txtline + strlen(txtline);
-    celsius_str(p, cw->maximumC);
-    strcat(txtline, "C");
-    l = strlen(txtline);
-    memset(txtline + l, ' ', 40 - l);
-    txtline[40] = 0;
-    // 3rd line
-    //txtline = cw->text_lines[2];
-    //memset(txtline, ' ', 40);
-    //txtline[40] = 0;
-    // 4th line
-    //txtline = cw->text_lines[3];
-    //strcpy(txtline, "C:Configure | U:Unit | Q:Quit");
-    //l = strlen(txtline);
-    //memset(txtline + l, ' ', 40 - l);
-    //txtline[40] = 0;
-}
-
 void fail(char *msg) {
     printf("%s\n", msg);
     exit(1);

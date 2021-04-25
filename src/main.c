@@ -52,10 +52,12 @@ void print_city_weather(CityWeather *cw) {
     //printf("Humidity: %d\n", cw->humidity);
 }
 
+
 //static uint8_t scratch[1024];
 static CityWeather **cities;
 static int8_t city_idx = 0;
 static CityWeather *current_city;
+static enum Units current_units = Celsius;
 
 void init_cities(MeteoConfig *cfg) {
     uint8_t i;
@@ -65,23 +67,30 @@ void init_cities(MeteoConfig *cfg) {
         printf("\n");
         current_city = cities[i] = fetch_data(cfg->city_ids[i]);
         if (current_city) {
-            //prepare_gfx_text(current_city);
+            print_city_weather(current_city);
+
             if (!strcmp("01d", current_city->icon)) {
+                free(current_city->icon); // we won't use it anymore
                 current_city->bitmap = &Bitmap01d;
             } else if (!strcmp("01n", current_city->icon)) {
+                free(current_city->icon); // we won't use it anymore
                 current_city->bitmap = &Bitmap01n;
             } else if (!strcmp("02d", current_city->icon)) {
+                free(current_city->icon); // we won't use it anymore
                 current_city->bitmap = &Bitmap02d;
             } else if (!strcmp("02n", current_city->icon)) {
+                free(current_city->icon); // we won't use it anymore
                 current_city->bitmap = &Bitmap02n;
             } else if (!strcmp("04d", current_city->icon)) {
+                free(current_city->icon); // we won't use it anymore
                 current_city->bitmap = &Bitmap04d;
             } else if (!strcmp("04n", current_city->icon)) {
+                free(current_city->icon); // we won't use it anymore
                 current_city->bitmap = &Bitmap04d;
             } else {
+                free(current_city->icon); // we won't use it anymore
                 current_city->bitmap = &Bitmap404;
             }
-            print_city_weather(current_city);
         }
     }
 }
@@ -120,7 +129,7 @@ int main(void) {
     init_cities(cfg);
     //city_idx = 0;
     //free_config(cfg);
-    cgetc();
+    //cgetc();
 
     init_gfx();
     clear_screen();
@@ -128,7 +137,7 @@ int main(void) {
     set_menu_text();
     while (1) {
         update_gfx_image(current_city);
-        update_gfx_text(current_city);
+        update_gfx_text(current_city, current_units);
         ch = cgetc();
         switch (ch) {
         case 'c':
@@ -141,15 +150,19 @@ int main(void) {
         case 'q':
         case 'Q':
             goto exit;
+        case 'u':
+        case 'U':
+            current_units = !current_units;
+            break;
         case 8:
             prev_city_index(cfg);
             break;
         case 21:
+        case ' ':
             next_city_index(cfg);
             break;
         }
     }
-
 exit:
     exit_gfx();
     clrscr();

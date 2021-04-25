@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+enum Units{Celsius, Fahrenheit};
+
 // kelvin has 2 "decimals"
 // exemple: 273.15 kelvin is stored as 27315
 typedef uint16_t kelvin;
@@ -19,8 +21,10 @@ typedef struct {
     char *city_name;
     char *weather;
     char *description;
-    char *icon;
-    uint8_t (*bitmap)[20][40];
+    union {
+        char *icon;
+        uint8_t (*bitmap)[20][40];
+    };
     celsius temperatureC;
     celsius minimumC;
     celsius maximumC;
@@ -28,7 +32,6 @@ typedef struct {
     fahrenheit minimumF;
     fahrenheit maximumF;
     int16_t humidity;
-    char text_lines[3][41];
 } CityWeather;
 
 #endif
