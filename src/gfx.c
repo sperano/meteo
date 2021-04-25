@@ -39,44 +39,49 @@ void set_menu_text(void) {
 }
 
 void update_gfx_text(CityWeather *cw, enum Units units) {
-    static char line1[41];
-    static char line2[41];
+    static char line1[41] = {0};
+    static char line2[41] = {0};
+    static char line3[41] = {0};
     uint8_t i;
 
     // first line
     strcpy(line1, cw->city_name);
     strcat(line1, ": ");
     strcat(line1, cw->weather);
-    strcat(line1, " (");
-    strcat(line1, cw->description);
-    strcat(line1, ")");
     i = strlen(line1);
     memset(line1 + i, ' ', 40 - i);
-    line1[40] = 0;
     // second line
+    strcpy(line2, "(");
+    strcat(line2, cw->description);
+    strcat(line2, ")");
+    i = strlen(line2);
+    memset(line2 + i, ' ', 40 - i);
+    // third line
     if (units == Celsius) {
-        celsius_str(line2, cw->temperatureC);
-        strcat(line2, "C  /  Min: ");
-        celsius_str(line2 + strlen(line2), cw->minimumC);
-        strcat(line2, "C  /  Max: ");
-        celsius_str(line2 + strlen(line2), cw->maximumC);
-        strcat(line2, "C");
-        i = strlen(line2);
-        memset(line2 + i, ' ', 40 - i);
+        celsius_str(line3, cw->temperatureC);
+        strcat(line3, "C  /  Min: ");
+        celsius_str(line3 + strlen(line3), cw->minimumC);
+        strcat(line3, "C  /  Max: ");
+        celsius_str(line3 + strlen(line3), cw->maximumC);
+        strcat(line3, "C");
+        i = strlen(line3);
+        memset(line3 + i, ' ', 40 - i);
     } else {
-        sprintf(line2, "%dF  /  Min: %dF  /  Max: %fF", cw->temperatureF, cw->minimumF, cw->maximumF);
-        i = strlen(line2);
-        memset(line2 + i, ' ', 40 - i);
+        sprintf(line3, "%dF  /  Min: %dF  /  Max: %dF", cw->temperatureF, cw->minimumF, cw->maximumF);
+        i = strlen(line3);
+        memset(line3 + i, ' ', 40 - i);
     }
-    line2[40] = 0;
+    //line1[40] = line2[40] = line3[40] = 0;
     // prepare to display
     for (i = 0; i < 40; ++i) {
         line1[i] += 0x80;
         line2[i] += 0x80;
+        line3[i] += 0x80;
     }
     // display
     memcpy((void *)VideoBases[20], line1, 40);
-    memcpy((void *)VideoBases[21], line2, 40);
+    memcpy((void *)VideoBases[21], line3, 40);
+    memcpy((void *)VideoBases[22], line2, 40);
 }
 
 void update_gfx_image(CityWeather *cw) {
