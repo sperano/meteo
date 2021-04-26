@@ -16,15 +16,17 @@ typedef uint16_t celsius;
 // fahrenheit has no "decimal"
 typedef uint8_t fahrenheit;
 
+typedef uint8_t Bitmap[20][40];
+
 typedef struct {
     char *id;
     char *city_name;
     char *weather;
     char *description;
-    union {
+    //union {
         char *icon;
-        uint8_t (*bitmap)[20][40];
-    };
+        Bitmap *bitmap;
+    //};
     celsius temperatureC;
     celsius minimumC;
     celsius maximumC;
@@ -33,5 +35,10 @@ typedef struct {
     fahrenheit maximumF;
     int16_t humidity;
 } CityWeather;
+
+typedef struct {
+    char *icon;
+    Bitmap *bitmap;
+} IconBitmapPair;
 
 #endif

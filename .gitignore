@@ -1,6 +1,7 @@
 .DS_Store
 *.o
 meteo.bin
+fetch.bin
 meteo.po
 vendor/bitmap2c/bitmap2c
 tests/test

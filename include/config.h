@@ -12,11 +12,13 @@ typedef struct MeteoConfig {
     char **city_ids;
 } MeteoConfig;
 
-MeteoConfig* read_config();
-void free_config(MeteoConfig *cfg);
-void save_config(MeteoConfig *config);
-void validate_config(MeteoConfig *cfg);
-void print_config(MeteoConfig *cfg);
-void config_screen(MeteoConfig *cfg);
+void read_config();
+void free_config();
+void save_config();
+void validate_config();
+void print_config();
+void config_screen();
+
+extern MeteoConfig config;
 
 #endif

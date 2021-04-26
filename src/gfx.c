@@ -1,6 +1,7 @@
 #include <peekpoke.h>
 #include <stdio.h>
 #include <string.h>
+#include "bitmaps.h"
 #include "gfx.h"
 #include "utils.h"
 
@@ -47,31 +48,35 @@ void update_gfx_text(CityWeather *cw, enum Units units) {
     // first line
     strcpy(line1, cw->city_name);
     strcat(line1, ": ");
-    strcat(line1, cw->weather);
+    if (units == Celsius) {
+        celsius_str(line1 + strlen(line1), cw->temperatureC);
+        strcat(line1, "C");
+    } else {
+        sprintf(line1 + strlen(line1), "%dF", cw->temperatureF);
+    }
     i = strlen(line1);
     memset(line1 + i, ' ', 40 - i);
     // second line
-    strcpy(line2, "(");
+    strcpy(line2, cw->weather );
+    strcat(line2, " (");
     strcat(line2, cw->description);
     strcat(line2, ")");
     i = strlen(line2);
     memset(line2 + i, ' ', 40 - i);
     // third line
     if (units == Celsius) {
-        celsius_str(line3, cw->temperatureC);
-        strcat(line3, "C  /  Min: ");
+        strcpy(line3, "Minimum: ");
         celsius_str(line3 + strlen(line3), cw->minimumC);
-        strcat(line3, "C  /  Max: ");
+        strcat(line3, "C  /  Maximum: ");
         celsius_str(line3 + strlen(line3), cw->maximumC);
         strcat(line3, "C");
         i = strlen(line3);
         memset(line3 + i, ' ', 40 - i);
     } else {
-        sprintf(line3, "%dF  /  Min: %dF  /  Max: %dF", cw->temperatureF, cw->minimumF, cw->maximumF);
+        sprintf(line3, "Minimum: %dF  /  Maximum: %dF", cw->minimumF, cw->maximumF);
         i = strlen(line3);
         memset(line3 + i, ' ', 40 - i);
     }
-    //line1[40] = line2[40] = line3[40] = 0;
     // prepare to display
     for (i = 0; i < 40; ++i) {
         line1[i] += 0x80;
@@ -80,16 +85,37 @@ void update_gfx_text(CityWeather *cw, enum Units units) {
     }
     // display
     memcpy((void *)VideoBases[20], line1, 40);
-    memcpy((void *)VideoBases[21], line3, 40);
-    memcpy((void *)VideoBases[22], line2, 40);
+    memcpy((void *)VideoBases[21], line2, 40);
+    memcpy((void *)VideoBases[22], line3, 40);
 }
 
 void update_gfx_image(CityWeather *cw) {
     uint8_t i;
+    Bitmap *ptr = cw->bitmap;
     for (i = 0; i < 20; ++i) {
-        memcpy((void*)VideoBases[i], (*cw->bitmap)[i], 40);
+        memcpy((void*)VideoBases[i], (*ptr)[i], 40);
     }
 }
+
+#define MAX_BITMAPS 6
+Bitmap* get_bitmap_for_icon(char *icon) {
+    static IconBitmapPair iconBitmapMap[] = {
+        {"01d", &Bitmap01d},
+        {"01n", &Bitmap01n},
+        {"02d", &Bitmap02d},
+        {"02n", &Bitmap02n},
+        {"04d", &Bitmap04d},
+        {"04n", &Bitmap04d},
+    };
+    uint8_t i;
+    for (i = 0; i < MAX_BITMAPS; ++i) {
+        if (!strcmp(iconBitmapMap[i].icon, icon)) {
+            return iconBitmapMap[i].bitmap;
+        }
+    }
+    return &Bitmap404;
+}
+
 
 /*
 void pset(unsigned char x, unsigned char y, unsigned char color) {

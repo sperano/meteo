@@ -4,6 +4,6 @@
 #include <stdio.h>
 #include "types.h"
 
-int parse_api_response(CityWeather *cw, FILE *f);
+void parse_api_response(CityWeather *cw, FILE *f);
 
 #endif

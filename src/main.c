@@ -18,7 +18,6 @@ CityWeather* fetch_data(char *city_id) {
     char filename[15];
     FILE *f;
     CityWeather *cw;
-    int rc;
 
     sprintf(filename, "W%s.JSON", city_id);
     printf(">>> Loading %s\n", filename);
@@ -30,13 +29,9 @@ CityWeather* fetch_data(char *city_id) {
     cw = safe_malloc(sizeof(CityWeather));
     //strcpy(cw->id, city_id);
     cw->id = city_id;
-    rc = parse_api_response(cw, f);
+    parse_api_response(cw, f);
     fclose(f);
-    if (rc == 0) {
-        return cw;
-    }
-    free(cw);
-    return NULL;
+    return cw;
 }
 
 void print_city_weather(CityWeather *cw) {
@@ -59,75 +54,50 @@ static int8_t city_idx = 0;
 static CityWeather *current_city;
 static enum Units current_units = Celsius;
 
-void init_cities(MeteoConfig *cfg) {
+void init_cities() {
     uint8_t i;
 
-    cities = safe_malloc(cfg->nb_cities * sizeof(CityWeather*));
-    for (i = 0; i < cfg->nb_cities; ++i) {
+    cities = safe_malloc(config.nb_cities * sizeof(CityWeather*));
+    for (i = 0; i < config.nb_cities; ++i) {
         printf("\n");
-        current_city = cities[i] = fetch_data(cfg->city_ids[i]);
+        current_city = cities[i] = fetch_data(config.city_ids[i]);
         if (current_city) {
             print_city_weather(current_city);
-
-            if (!strcmp("01d", current_city->icon)) {
-                free(current_city->icon); // we won't use it anymore
-                current_city->bitmap = &Bitmap01d;
-            } else if (!strcmp("01n", current_city->icon)) {
-                free(current_city->icon); // we won't use it anymore
-                current_city->bitmap = &Bitmap01n;
-            } else if (!strcmp("02d", current_city->icon)) {
-                free(current_city->icon); // we won't use it anymore
-                current_city->bitmap = &Bitmap02d;
-            } else if (!strcmp("02n", current_city->icon)) {
-                free(current_city->icon); // we won't use it anymore
-                current_city->bitmap = &Bitmap02n;
-            } else if (!strcmp("04d", current_city->icon)) {
-                free(current_city->icon); // we won't use it anymore
-                current_city->bitmap = &Bitmap04d;
-            } else if (!strcmp("04n", current_city->icon)) {
-                free(current_city->icon); // we won't use it anymore
-                current_city->bitmap = &Bitmap04d;
-            } else {
-                free(current_city->icon); // we won't use it anymore
-                current_city->bitmap = &Bitmap404;
-            }
+            //cgetc();
+            current_city->bitmap = get_bitmap_for_icon(current_city->icon);
+            //free(current_city->icon); // we won't use it anymore
         }
     }
 }
 
-void next_city_index(MeteoConfig *cfg) {
-    if (++city_idx == cfg->nb_cities) {
+void next_city_index() {
+    if (++city_idx == config.nb_cities) {
         city_idx = 0;
     }
     current_city = cities[city_idx];
 }
 
-void prev_city_index(MeteoConfig *cfg) {
+void prev_city_index() {
     if (--city_idx < 0) {
-        city_idx = cfg->nb_cities - 1;
+        city_idx = config.nb_cities - 1;
     }
     current_city = cities[city_idx];
 }
 
 int main(void) {
-    MeteoConfig *cfg;
-    //CityWeather *cw;
+    uint8_t eth_init = ETH_INIT_DEFAULT;
     char ch;
-    //uint8_t eth_init = ETH_INIT_DEFAULT;
 
     printf("Meteo version %s\nby Eric Sperano (2021)\n\n", METEO_VERSION);
-    cfg = read_config();
-    print_config(cfg);
-    validate_config(cfg);
-
-/*
-
+    read_config();
+    print_config();
+    validate_config();
+    /*
     if (ip65_init(eth_init)) {
         fail("Error initializing ethernet");
     }
-*/
-    init_cities(cfg);
-    //city_idx = 0;
+    */
+    init_cities();
     //free_config(cfg);
     //cgetc();
 
@@ -143,7 +113,7 @@ int main(void) {
         case 'c':
         case 'C':
             exit_gfx();
-            config_screen(cfg);
+            config_screen();
             init_gfx();
             set_menu_text();
             break;
@@ -155,11 +125,11 @@ int main(void) {
             current_units = !current_units;
             break;
         case 8:
-            prev_city_index(cfg);
+            prev_city_index();
             break;
         case 21:
         case ' ':
-            next_city_index(cfg);
+            next_city_index();
             break;
         }
     }
