@@ -35,8 +35,11 @@ static MeteoConfig config;
 void read_config() {
     uint8_t byte, i, j;
     char *appid = config.app_id;
+    FILE *file;
 
-    FILE *file = fopen(METEO_CONFIG_FILENAME2, "r");
+    print_line();
+    printf(">>> Loading config %s\n", METEO_CONFIG_FILENAME);
+    file = fopen(METEO_CONFIG_FILENAME, "r");
     if (file == NULL) {
         fail("Can't open config file");
     }
@@ -77,6 +80,7 @@ void free_config() {
 
 void print_config() {
     uint8_t i;
+    printf("Ethernet Slot: %d\n", config.ethernet_slot);
     printf("AppID: %s\n", config.app_id);
     for (i = 0; i < config.nb_cities; ++i) {
         if (config.city_ids[i][0]) {

@@ -10,11 +10,22 @@ static char download[2048];
 
 void main(void) {
     uint16_t len;
-    uint8_t eth_init = ETH_INIT_DEFAULT;
+    uint8_t eth_init = 5; //ETH_INIT_DEFAULT;
     char *ptr = url;
 
     read_config();
-
+    /*
+    for (len = 1; len < 8; ++len) {
+        printf("Init ether slot #%d\n", len);
+        eth_init &= ~'0';
+        if (ip65_init(len)) {
+            //printf("failed\n");
+            printf("- %s\n", ip65_strerror(ip65_error));
+        } else {
+            printf("OK!\n");
+        }
+    }
+    */
     if (ip65_init(eth_init)) {
         fail("Error initializing ethernet");
     }
@@ -27,10 +38,6 @@ void main(void) {
     while (*ptr) {
         *ptr = toascii(*ptr);
         ++ptr;
-    }
-    if (strlen(url) > 1400) {
-        ip65_error = IP65_ERROR_MALFORMED_URL;
-        fail("IP65_ERROR_MALFORMED_URL");
     }
     len = url_download(url, download, sizeof(download));
 

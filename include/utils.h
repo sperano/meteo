@@ -1,6 +1,7 @@
 #ifndef _UTILS_H
 #define _UTILS_H
 
+#include <stdio.h>
 #include "types.h"
 
 kelvin str_to_kelvin(const char *src);
@@ -10,5 +11,7 @@ fahrenheit celsius_to_fahrenheit(const celsius temp);
 void celsius_str(char *buffer, const celsius temp);
 void fail(char *msg);
 void* safe_malloc(size_t size);
+
+#define print_line() printf("---------------------------------------\n")
 
 #endif

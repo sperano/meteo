@@ -1,7 +1,7 @@
 #ifndef _METEO_CONFIG_H
 #define _METEO_CONFIG_H
 
-#define METEO_CONFIG_FILENAME2 "METEO.CFG"
+#define METEO_CONFIG_FILENAME "METEO.CFG"
 
 #include <stdint.h>
 
