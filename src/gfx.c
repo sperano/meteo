@@ -1,5 +1,6 @@
 #include <peekpoke.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "bitmaps.h"
 #include "gfx.h"
@@ -33,8 +34,12 @@ void clear_screen() {
 }
 
 void set_menu_text(void) {
-    static const char menu_str[] = { 0x20, 0x83, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x75, 0x72, 0x65, 0x20, 0x7c, 0x20, 0x03, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x20,
-                                     0x95, 0x6e, 0x69, 0x74, 0x73, 0x20, 0x7c, 0x20, 0x91, 0x75, 0x69, 0x74, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20 };
+    static const char menu_str[] = {
+        0x20, 0x83, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x75, 0x72, 0x65,
+        0x20, 0x7c, 0x20, 0x03, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x20,
+        0x95, 0x6e, 0x69, 0x74, 0x73, 0x20, 0x7c, 0x20, 0x91, 0x75,
+        0x69, 0x74, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20
+    };
     //memcpy((void *)VideoBases[22], ' ' + 0x80, 40); TODO not necessary?
     memcpy((void *)VideoBases[23], menu_str, 40);
 }
@@ -91,31 +96,79 @@ void update_gfx_text(CityWeather *cw, enum Units units) {
 
 void update_gfx_image(CityWeather *cw) {
     uint8_t i;
-    Bitmap *ptr = cw->bitmap;
+    Bitmap ptr = cw->bitmap;
     for (i = 0; i < 20; ++i) {
-        memcpy((void*)VideoBases[i], (*ptr)[i], 40);
+        memcpy((void*)VideoBases[i], ptr[i], 40);
     }
 }
 
+Bitmap load_bitmap(char *filename) {
+    char path[10];
+    uint8_t *data = safe_malloc(800); // TODO constants
+    FILE *file;
+    uint8_t i;
+
+    strcpy(path, filename);
+    strcat(path, ".A2LR");
+    file = fopen(path, "r");
+    if (file == NULL) {
+        printf("Fail to load bitmap: '%s'\n", path);
+        fail("TODO");
+    }
+    for(i = 0; i < 800; ++i) {
+        data[i] = fgetc(file);
+    }
+    fclose(file);
+    return (Bitmap)data;
+}
+
+//Bitmap
+
 #define MAX_BITMAPS 6
-Bitmap* get_bitmap_for_icon(char *icon) {
-    static IconBitmapPair iconBitmapMap[] = {
-        {"01d", &Bitmap01d},
-        {"01n", &Bitmap01n},
-        {"02d", &Bitmap02d},
-        {"02n", &Bitmap02n},
-        {"04d", &Bitmap04d},
-        {"04n", &Bitmap04d},
+char *get_filename_for_icon(char *icon) {
+    static IconMapping mappings[] = {
+        {"01d", "I01D"},
+        {"01n", "I01N"},
+        {"02d", "I02D"},
+        {"02n", "I02N"},
+        {"04d", "I04D"},
+        {"04n", "I04D"},
     };
     uint8_t i;
     for (i = 0; i < MAX_BITMAPS; ++i) {
-        if (!strcmp(iconBitmapMap[i].icon, icon)) {
-            return iconBitmapMap[i].bitmap;
+        if (!strcmp(mappings[i].icon, icon)) {
+            return mappings[i].filename;
         }
     }
-    return &Bitmap404;
+    return "404";
 }
 
+Bitmap get_bitmap_for_icon(char *icon) {
+    static BitmapMapping *bitmap_mappings = NULL;
+    static uint8_t bitmap_mappings_count = 0;
+    char *filename = get_filename_for_icon(icon);
+    Bitmap bitmap;
+    uint8_t i;
+
+    if (bitmap_mappings != NULL) {
+        for (i = 0; i < bitmap_mappings_count; ++i) {
+            if (!strcmp(bitmap_mappings[i].filename, filename)) {
+                return bitmap_mappings[i].bitmap;
+            }
+        }
+    }
+    if (bitmap_mappings == NULL) {
+        bitmap_mappings = malloc(sizeof(BitmapMapping));
+    } else {
+        bitmap_mappings = realloc(bitmap_mappings, (bitmap_mappings_count+1)*sizeof(BitmapMapping));
+    }
+
+    bitmap = load_bitmap(filename);
+    bitmap_mappings[bitmap_mappings_count].filename = filename;
+    bitmap_mappings[bitmap_mappings_count].bitmap = bitmap;
+    bitmap_mappings_count++;
+    return bitmap;
+}
 
 /*
 void pset(unsigned char x, unsigned char y, unsigned char color) {

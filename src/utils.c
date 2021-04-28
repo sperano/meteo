@@ -59,14 +59,16 @@ void celsius_str(char *buffer, const celsius temp) {
 }
 
 void fail(char *msg) {
-    printf("%s\n", msg);
-    exit(1);
+    perror(msg);
+    for(;;); //TODO
+    //exit(1);
 }
 
 void* safe_malloc(size_t size) {
     void *p = malloc(size);
     if (p == NULL) {
-        fail("Out of memory");
+        printf("size: %d\n", size);
+        fail("safe_malloc failed, Out of memory");
     }
     return p;
 }

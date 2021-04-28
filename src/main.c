@@ -113,7 +113,6 @@ void init_cities() {
         current_city = cities[i] = fetch_data(config.city_ids[i]);
         if (current_city) {
             print_city_weather(current_city);
-            //cgetc();
             current_city->bitmap = get_bitmap_for_icon(current_city->icon);
             //free(current_city->icon); // we won't use it anymore
         }
@@ -149,14 +148,26 @@ void init_internet(void) {
 }
 #endif
 
+//extern int errno;
+
+// TODO test when there is 0 in config!
 int main(void) {
     char ch;
-
+    FILE *file;
+    //errno = 0;
     printf("Meteo version %s\nby Eric Sperano (2021)\n\n", METEO_VERSION);
     read_config();
     print_config();
     validate_config();
 
+    /*
+    file = fopen("I01D.A2LR", "rb");
+    if (file == NULL) {
+        fail("fopen failed");
+    }
+    printf("fopen succeeded!\n");
+    fclose(file);
+    */
 #ifndef MOCK_IP65
     init_internet();
 #endif
