@@ -30,20 +30,24 @@ Config file structure:
 
 */
 
-MeteoConfig* read_config() {
-    static MeteoConfig config;
+static MeteoConfig config;
+
+void read_config() {
     uint8_t byte, i, j;
     char *appid = config.app_id;
+    FILE *file;
 
-    FILE *file = fopen(METEO_CONFIG_FILENAME2, "r");
+    //print_line();
+    printf("Loading config %s\n", METEO_CONFIG_FILENAME);
+    file = fopen(METEO_CONFIG_FILENAME, "r");
     if (file == NULL) {
-        fail("Can't open config file");
+        fail("Can't open config file\n");
     }
     if ((byte = getc(file)) != 0xe5) { // magic number
-        fail("Not a valid config file");
+        fail("Not a valid config file\n");
     }
     if ((byte = getc(file)) != 0x76) { // magic number
-        fail("Not a valid config file");
+        fail("Not a valid config file\n");
     }
     getc(file); // version
     config.ethernet_slot = getc(file); // ethernet slot
@@ -54,49 +58,56 @@ MeteoConfig* read_config() {
 
     config.nb_cities = getc(file);
     //printf("nb_cities=%d\n", config.nb_cities);
-    config.city_ids = safe_malloc(config.nb_cities * sizeof(char*));
+    config.city_ids = safe_malloc(config.nb_cities * sizeof(char*), "Array of CityID");
     for (i = 0; i < config.nb_cities; ++i) {
-        config.city_ids[i] = safe_malloc(9 * sizeof(char));
+        config.city_ids[i] = safe_malloc(9 * sizeof(char), "CityID");
         for (j = 0; j < 8; ++j) {
             config.city_ids[i][j] = getc(file); // city id
         }
         config.city_ids[i][8] = 0;
     }
     fclose(file);
-    return &config;
+    //return &config;
 }
 
-void free_config(MeteoConfig* cfg) {
+void free_config() {
     uint8_t i;
-    for (i = 0; i < cfg->nb_cities; ++i) {
-        free(cfg->city_ids[i]);
+    for (i = 0; i < config.nb_cities; ++i) {
+        free(config.city_ids[i]);
     }
-    free(cfg->city_ids);
+    free(config.city_ids);
 }
 
-void print_config(MeteoConfig* cfg) {
+void print_config() {
     uint8_t i;
-    printf("AppID: %s\n", cfg->app_id);
-    for (i = 0; i < cfg->nb_cities; ++i) {
-        if (cfg->city_ids[i][0]) {
-            printf("CityID[%d]: %s\n", i, cfg->city_ids[i]);
+    printf("Ethernet Slot: %d\n", config.ethernet_slot);
+    printf("AppID: %s\n", config.app_id);
+    for (i = 0; i < config.nb_cities; ++i) {
+        if (config.city_ids[i][0]) {
+            printf("CityID[%d]: %s\n", i, config.city_ids[i]);
         }
     }
 }
 
-void validate_config(MeteoConfig* cfg) {
+void validate_config() {
     uint8_t at_least_one = 0;
     uint8_t i;
-    if (strlen(cfg->app_id) != 32) {
-        fail("Invalid Weather App Id");
+    if (strlen(config.app_id) != 32) {
+        fail("Invalid Weather App Id: '%s'\n", config.app_id);
     }
-    if (cfg->nb_cities == 0) {
-        fail("No cities configured.");
+    if (config.nb_cities == 0) {
+        fail("No cities configured.\n");
     }
 }
 
-void config_screen(MeteoConfig *cfg) {
+void config_screen() {
+    uint8_t i;
     clrscr();
-    printf("Meteo %s Configuration\n", METEO_VERSION);
+    printf("Meteo %s Configuration\n\n", METEO_VERSION);
+    printf("S) Save Configuration\n\nA) Edit AppID:\n   %s\n\nC) Add City\n", config.app_id);
+    for(i = 0; i < config.nb_cities; ++i) {
+        printf("%d) Edit %s\n", i + 1, config.city_ids[i]);
+    }
+    printf("\nQ) Quit config\n");
     cgetc();
 }

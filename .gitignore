@@ -1,6 +1,10 @@
 .DS_Store
 *.o
 meteo.bin
+meteo.system
+meteom.system
+fetch.bin
 meteo.po
 vendor/bitmap2c/bitmap2c
+vendor/bitmap2a2lr/bitmap2a2lr
 tests/test

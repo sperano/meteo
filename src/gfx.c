@@ -1,6 +1,8 @@
 #include <peekpoke.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include "bitmaps.h"
 #include "gfx.h"
 #include "utils.h"
 
@@ -32,8 +34,12 @@ void clear_screen() {
 }
 
 void set_menu_text(void) {
-    static const char menu_str[] = { 0x20, 0x83, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x75, 0x72, 0x65, 0x20, 0x7c, 0x20, 0x03, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x20,
-                                     0x95, 0x6e, 0x69, 0x74, 0x73, 0x20, 0x7c, 0x20, 0x91, 0x75, 0x69, 0x74, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20 };
+    static const char menu_str[] = {
+        0x20, 0x83, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x75, 0x72, 0x65,
+        0x20, 0x7c, 0x20, 0x03, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x20,
+        0x95, 0x6e, 0x69, 0x74, 0x73, 0x20, 0x7c, 0x20, 0x91, 0x75,
+        0x69, 0x74, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20
+    };
     //memcpy((void *)VideoBases[22], ' ' + 0x80, 40); TODO not necessary?
     memcpy((void *)VideoBases[23], menu_str, 40);
 }
@@ -47,31 +53,35 @@ void update_gfx_text(CityWeather *cw, enum Units units) {
     // first line
     strcpy(line1, cw->city_name);
     strcat(line1, ": ");
-    strcat(line1, cw->weather);
+    if (units == Celsius) {
+        celsius_str(line1 + strlen(line1), cw->temperatureC);
+        strcat(line1, "C");
+    } else {
+        sprintf(line1 + strlen(line1), "%dF", cw->temperatureF);
+    }
     i = strlen(line1);
     memset(line1 + i, ' ', 40 - i);
     // second line
-    strcpy(line2, "(");
+    strcpy(line2, cw->weather );
+    strcat(line2, " (");
     strcat(line2, cw->description);
     strcat(line2, ")");
     i = strlen(line2);
     memset(line2 + i, ' ', 40 - i);
     // third line
     if (units == Celsius) {
-        celsius_str(line3, cw->temperatureC);
-        strcat(line3, "C  /  Min: ");
+        strcpy(line3, "Minimum: ");
         celsius_str(line3 + strlen(line3), cw->minimumC);
-        strcat(line3, "C  /  Max: ");
+        strcat(line3, "C  /  Maximum: ");
         celsius_str(line3 + strlen(line3), cw->maximumC);
         strcat(line3, "C");
         i = strlen(line3);
         memset(line3 + i, ' ', 40 - i);
     } else {
-        sprintf(line3, "%dF  /  Min: %dF  /  Max: %dF", cw->temperatureF, cw->minimumF, cw->maximumF);
+        sprintf(line3, "Minimum: %dF  /  Maximum: %dF", cw->minimumF, cw->maximumF);
         i = strlen(line3);
         memset(line3 + i, ' ', 40 - i);
     }
-    //line1[40] = line2[40] = line3[40] = 0;
     // prepare to display
     for (i = 0; i < 40; ++i) {
         line1[i] += 0x80;
@@ -80,15 +90,92 @@ void update_gfx_text(CityWeather *cw, enum Units units) {
     }
     // display
     memcpy((void *)VideoBases[20], line1, 40);
-    memcpy((void *)VideoBases[21], line3, 40);
-    memcpy((void *)VideoBases[22], line2, 40);
+    memcpy((void *)VideoBases[21], line2, 40);
+    memcpy((void *)VideoBases[22], line3, 40);
 }
 
 void update_gfx_image(CityWeather *cw) {
     uint8_t i;
+    Bitmap ptr = cw->bitmap;
     for (i = 0; i < 20; ++i) {
-        memcpy((void*)VideoBases[i], (*cw->bitmap)[i], 40);
+        memcpy((void*)VideoBases[i], ptr + (i * 20), 40);
     }
+}
+
+#define BITMAP_SIZE 800
+Bitmap load_bitmap(char *filename) {
+    char path[10];
+    uint8_t *data = safe_malloc(BITMAP_SIZE, "Bitmap");
+    FILE *file;
+    uint16_t i;
+
+    strcpy(path, filename);
+    strcat(path, ".A2LR");
+    printf("Loading %s\n", path);
+
+    file = fopen(path, "r");
+    if (file == NULL) {
+        fail("Failed to load bitmap '%s'\n", path);
+    }
+    i = fread(data, BITMAP_SIZE, 1, file);
+    if (i != 1) {
+        fclose(file);
+        fail("Unexpected element count: %d != 1\n", i);
+    }
+    printf("Bitmap %s loaded\n", path);
+    fclose(file);
+    return (Bitmap)data;
+}
+
+//Bitmap
+
+#define MAX_BITMAPS 6
+char *get_filename_for_icon(char *icon) {
+    static IconMapping mappings[] = {
+        {"01d", "I01D"},
+        {"01n", "I01N"},
+        {"02d", "I02D"},
+        {"02n", "I02N"},
+        {"04d", "I04D"},
+        {"04n", "I04D"},
+    };
+    uint8_t i;
+    for (i = 0; i < MAX_BITMAPS; ++i) {
+        if (!strcmp(mappings[i].icon, icon)) {
+            return mappings[i].filename;
+        }
+    }
+    return "I404";
+}
+
+Bitmap get_bitmap_for_icon(char *icon) {
+    static BitmapMapping *bitmap_mappings = NULL;
+    static uint8_t bm_count = 0;
+    char *filename = get_filename_for_icon(icon);
+    Bitmap bitmap;
+    uint8_t i;
+
+    //printf("get_bitmap_for_icon icon=%s bitmap_mappings=%x bm_count=%d filename=%s\n", icon, bitmap_mappings, bm_count, filename);
+    if (bitmap_mappings != NULL) {
+        printf("Searching bitmaps cache for %s...\n", filename);
+        for (i = 0; i < bm_count; ++i) {
+            if (!strcmp(bitmap_mappings[i].filename, filename)) {
+                printf("Found it.\n");
+                return bitmap_mappings[i].bitmap;
+            }
+        }
+    }
+    if (bitmap_mappings == NULL) {
+        bitmap_mappings = safe_malloc(sizeof(BitmapMapping), "Array of BitmapMapping");
+    } else {
+        bitmap_mappings = safe_realloc(bitmap_mappings, (bm_count+1)*sizeof(BitmapMapping), "Array of BitmapMapping");
+    }
+
+    bitmap = load_bitmap(filename);
+    bitmap_mappings[bm_count].filename = filename;
+    bitmap_mappings[bm_count].bitmap = bitmap;
+    bm_count++;
+    return bitmap;
 }
 
 /*

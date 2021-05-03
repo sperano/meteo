@@ -7,42 +7,21 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "bitmaps.h"
 #include "config.h"
 #include "gfx.h"
-#include "parser.h"
+#include "net.h"
+//#include "parser.h"
 #include "utils.h"
-#include "ip65.h"
 
-CityWeather* fetch_data(char *city_id) {
-    char filename[15];
-    FILE *f;
-    CityWeather *cw;
-    int rc;
-
-    sprintf(filename, "W%s.JSON", city_id);
-    printf(">>> Loading %s\n", filename);
-    f = fopen(filename, "r");
-    if (!f) {
-        perror(filename);
-        return NULL;
-    }
-    cw = safe_malloc(sizeof(CityWeather));
-    //strcpy(cw->id, city_id);
-    cw->id = city_id;
-    rc = parse_api_response(cw, f);
-    fclose(f);
-    if (rc == 0) {
-        return cw;
-    }
-    free(cw);
-    return NULL;
-}
+static CityWeather **cities;
+static int8_t city_idx = 0;
+static CityWeather *current_city;
+static enum Units current_units = Celsius;
 
 void print_city_weather(CityWeather *cw) {
     char buffer[5];
     printf("%s: %s (%s)\n", cw->city_name, cw->weather, cw->description);
-    printf("ID: %s - Icon: %s\n", cw->id, cw->icon);
+    //printf("ID: %s - Icon: %s\n", cw->id, cw->icon);
     celsius_str(buffer, cw->temperatureC);
     printf("Temperature: %sC / %dF\n", buffer, cw->temperatureF);
     celsius_str(buffer, cw->minimumC);
@@ -52,82 +31,45 @@ void print_city_weather(CityWeather *cw) {
     //printf("Humidity: %d\n", cw->humidity);
 }
 
-
-//static uint8_t scratch[1024];
-static CityWeather **cities;
-static int8_t city_idx = 0;
-static CityWeather *current_city;
-static enum Units current_units = Celsius;
-
-void init_cities(MeteoConfig *cfg) {
-    uint8_t i;
-
-    cities = safe_malloc(cfg->nb_cities * sizeof(CityWeather*));
-    for (i = 0; i < cfg->nb_cities; ++i) {
-        printf("\n");
-        current_city = cities[i] = fetch_data(cfg->city_ids[i]);
-        if (current_city) {
-            print_city_weather(current_city);
-
-            if (!strcmp("01d", current_city->icon)) {
-                free(current_city->icon); // we won't use it anymore
-                current_city->bitmap = &Bitmap01d;
-            } else if (!strcmp("01n", current_city->icon)) {
-                free(current_city->icon); // we won't use it anymore
-                current_city->bitmap = &Bitmap01n;
-            } else if (!strcmp("02d", current_city->icon)) {
-                free(current_city->icon); // we won't use it anymore
-                current_city->bitmap = &Bitmap02d;
-            } else if (!strcmp("02n", current_city->icon)) {
-                free(current_city->icon); // we won't use it anymore
-                current_city->bitmap = &Bitmap02n;
-            } else if (!strcmp("04d", current_city->icon)) {
-                free(current_city->icon); // we won't use it anymore
-                current_city->bitmap = &Bitmap04d;
-            } else if (!strcmp("04n", current_city->icon)) {
-                free(current_city->icon); // we won't use it anymore
-                current_city->bitmap = &Bitmap04d;
-            } else {
-                free(current_city->icon); // we won't use it anymore
-                current_city->bitmap = &Bitmap404;
-            }
-        }
-    }
-}
-
-void next_city_index(MeteoConfig *cfg) {
-    if (++city_idx == cfg->nb_cities) {
+void next_city_index() {
+    if (++city_idx == config.nb_cities) {
         city_idx = 0;
     }
     current_city = cities[city_idx];
 }
 
-void prev_city_index(MeteoConfig *cfg) {
+void prev_city_index() {
     if (--city_idx < 0) {
-        city_idx = cfg->nb_cities - 1;
+        city_idx = config.nb_cities - 1;
     }
     current_city = cities[city_idx];
 }
 
+#ifndef MOCK_IP65
+#endif
+
+// TODO test when there is 0 in config!
 int main(void) {
-    MeteoConfig *cfg;
-    //CityWeather *cw;
     char ch;
-    //uint8_t eth_init = ETH_INIT_DEFAULT;
+    FILE *file;
 
     printf("Meteo version %s\nby Eric Sperano (2021)\n\n", METEO_VERSION);
-    cfg = read_config();
-    print_config(cfg);
-    validate_config(cfg);
+    read_config();
+    print_config();
+    validate_config();
+    init_net();
 
-/*
-
-    if (ip65_init(eth_init)) {
-        fail("Error initializing ethernet");
+    cities = safe_malloc(config.nb_cities * sizeof(CityWeather*), "Array of CityWeather*");
+    for (ch = 0; ch < config.nb_cities; ++ch) {
+        printf("\n");
+        //print_line();
+        current_city = cities[ch] = download_weather_data(config.city_ids[ch]);
+        if (current_city) {
+            print_city_weather(current_city);
+            current_city->bitmap = get_bitmap_for_icon(current_city->icon);
+            //free(current_city->icon); // we won't use it anymore
+        }
     }
-*/
-    init_cities(cfg);
-    //city_idx = 0;
     //free_config(cfg);
     //cgetc();
 
@@ -143,7 +85,7 @@ int main(void) {
         case 'c':
         case 'C':
             exit_gfx();
-            config_screen(cfg);
+            config_screen();
             init_gfx();
             set_menu_text();
             break;
@@ -155,11 +97,11 @@ int main(void) {
             current_units = !current_units;
             break;
         case 8:
-            prev_city_index(cfg);
+            prev_city_index();
             break;
         case 21:
         case ' ':
-            next_city_index(cfg);
+            next_city_index();
             break;
         }
     }
