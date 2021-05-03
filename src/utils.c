@@ -1,3 +1,6 @@
+#include <conio.h>
+#include <errno.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -58,17 +61,31 @@ void celsius_str(char *buffer, const celsius temp) {
     }
 }
 
-void fail(char *msg) {
-    perror(msg);
-    for(;;); //TODO
-    //exit(1);
+void fail(const char *fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    if (errno) {
+        perror("Error");
+    }
+    vprintf(fmt, args);
+    va_end(args);
+    printf("Press any key to exit.\n");
+    cgetc();
+    exit(1);
 }
 
-void* safe_malloc(size_t size) {
+void* safe_malloc(size_t size, char *msg) {
     void *p = malloc(size);
     if (p == NULL) {
-        printf("size: %d\n", size);
-        fail("safe_malloc failed, Out of memory");
+        fail("safe_malloc size: %d (%s)\n", size, msg);
+    }
+    return p;
+}
+
+void* safe_realloc(void *ptr, size_t size, char *msg) {
+    void *p = realloc(ptr, size);
+    if (p == NULL) {
+        fail("safe_realloc size: %d (%s)\n", size, msg);
     }
     return p;
 }

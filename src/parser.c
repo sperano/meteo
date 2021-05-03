@@ -26,13 +26,12 @@ typedef enum {
 static ParserState current_state;
 
 char* alloc_cpy(const char *src) {
-    char *dest = safe_malloc(strlen(src) + 1);
+    char *dest = safe_malloc(strlen(src) + 1, "String");
     strcpy(dest, src);
     return dest;
 }
 
-
-int8_t __fastcall__ my_callback(j65_parser *p, uint8_t event) {
+int8_t my_callback(j65_parser *p, uint8_t event) {
     const char *s;
     CityWeather *cw = j65_get_context(p);
 
@@ -98,16 +97,14 @@ int8_t __fastcall__ my_callback(j65_parser *p, uint8_t event) {
     return 0;
 }
 
-#define MAX_DEPTH 5
 void parse_api_response(CityWeather *cw, char *buffer, size_t len) {
     j65_parser parser;
     int8_t rc;
     current_state = PARSER_INIT;
 
-    j65_init(&parser, cw, my_callback, MAX_DEPTH);
+    j65_init(&parser, cw, my_callback, MAX_PARSER_DEPTH);
     rc = j65_parse(&parser, buffer, len);
     if (rc != J65_DONE) {
-        printf("rc=%d\n", rc);
-        fail("parser error");
+        fail("Parser error rc=%d\n", rc);
     }
 }

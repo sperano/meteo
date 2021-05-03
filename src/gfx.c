@@ -98,26 +98,31 @@ void update_gfx_image(CityWeather *cw) {
     uint8_t i;
     Bitmap ptr = cw->bitmap;
     for (i = 0; i < 20; ++i) {
-        memcpy((void*)VideoBases[i], ptr[i], 40);
+        memcpy((void*)VideoBases[i], ptr + (i * 20), 40);
     }
 }
 
+#define BITMAP_SIZE 800
 Bitmap load_bitmap(char *filename) {
     char path[10];
-    uint8_t *data = safe_malloc(800); // TODO constants
+    uint8_t *data = safe_malloc(BITMAP_SIZE, "Bitmap");
     FILE *file;
-    uint8_t i;
+    uint16_t i;
 
     strcpy(path, filename);
     strcat(path, ".A2LR");
+    printf("Loading %s\n", path);
+
     file = fopen(path, "r");
     if (file == NULL) {
-        printf("Fail to load bitmap: '%s'\n", path);
-        fail("TODO");
+        fail("Failed to load bitmap '%s'\n", path);
     }
-    for(i = 0; i < 800; ++i) {
-        data[i] = fgetc(file);
+    i = fread(data, BITMAP_SIZE, 1, file);
+    if (i != 1) {
+        fclose(file);
+        fail("Unexpected element count: %d != 1\n", i);
     }
+    printf("Bitmap %s loaded\n", path);
     fclose(file);
     return (Bitmap)data;
 }
@@ -140,33 +145,36 @@ char *get_filename_for_icon(char *icon) {
             return mappings[i].filename;
         }
     }
-    return "404";
+    return "I404";
 }
 
 Bitmap get_bitmap_for_icon(char *icon) {
     static BitmapMapping *bitmap_mappings = NULL;
-    static uint8_t bitmap_mappings_count = 0;
+    static uint8_t bm_count = 0;
     char *filename = get_filename_for_icon(icon);
     Bitmap bitmap;
     uint8_t i;
 
+    //printf("get_bitmap_for_icon icon=%s bitmap_mappings=%x bm_count=%d filename=%s\n", icon, bitmap_mappings, bm_count, filename);
     if (bitmap_mappings != NULL) {
-        for (i = 0; i < bitmap_mappings_count; ++i) {
+        printf("Searching bitmaps cache for %s...\n", filename);
+        for (i = 0; i < bm_count; ++i) {
             if (!strcmp(bitmap_mappings[i].filename, filename)) {
+                printf("Found it.\n");
                 return bitmap_mappings[i].bitmap;
             }
         }
     }
     if (bitmap_mappings == NULL) {
-        bitmap_mappings = malloc(sizeof(BitmapMapping));
+        bitmap_mappings = safe_malloc(sizeof(BitmapMapping), "Array of BitmapMapping");
     } else {
-        bitmap_mappings = realloc(bitmap_mappings, (bitmap_mappings_count+1)*sizeof(BitmapMapping));
+        bitmap_mappings = safe_realloc(bitmap_mappings, (bm_count+1)*sizeof(BitmapMapping), "Array of BitmapMapping");
     }
 
     bitmap = load_bitmap(filename);
-    bitmap_mappings[bitmap_mappings_count].filename = filename;
-    bitmap_mappings[bitmap_mappings_count].bitmap = bitmap;
-    bitmap_mappings_count++;
+    bitmap_mappings[bm_count].filename = filename;
+    bitmap_mappings[bm_count].bitmap = bitmap;
+    bm_count++;
     return bitmap;
 }
 

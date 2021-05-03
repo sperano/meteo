@@ -27,11 +27,11 @@ void main(void) {
     }
     */
     if (ip65_init(eth_init)) {
-        fail("Error initializing ethernet");
+        fail("Error initializing ethernet\n");
     }
     printf("- Ok\n\nObtaining IP address ");
     if (dhcp_init()) {
-        fail("Error DHCP");
+        fail("Error DHCP\n");
     }
     strcpy(url, "http://api.openweathermap.org/data/2.5/weather?id=5368335&appid=f3b3e0e41592b6706cc8b6040a335f45");
 

@@ -10,10 +10,11 @@ DEPST = $(patsubst %,tests/%,$(_DEPST))
 
 meteo.po: $(DEPSH) $(DEPSC) $(DEPSE)
 	$(MAKE) -C src
-	$(MAKE) -C src fetch.bin
+	$(MAKE) -C src meteom.system
 	applecommander -pro140 meteo.po meteo
 	@#applecommander -p meteo.po meteo.cfg txt <etc/meteo.cfg
-	applecommander -as meteo.po meteo.system <src/meteo.bin
+	applecommander -as meteo.po meteom.system <src/meteom.system
+	applecommander -as meteo.po meteo.system <src/meteo.system
 	applecommander -p meteo.po meteo.cfg bin <etc/meteo.cfg2
 	applecommander -p meteo.po I01d.a2lr bin <a2lr/01d.a2lr
 	applecommander -p meteo.po I01n.a2lr bin <a2lr/01n.a2lr

@@ -37,17 +37,17 @@ void read_config() {
     char *appid = config.app_id;
     FILE *file;
 
-    print_line();
-    printf(">>> Loading config %s\n", METEO_CONFIG_FILENAME);
+    //print_line();
+    printf("Loading config %s\n", METEO_CONFIG_FILENAME);
     file = fopen(METEO_CONFIG_FILENAME, "r");
     if (file == NULL) {
-        fail("Can't open config file");
+        fail("Can't open config file\n");
     }
     if ((byte = getc(file)) != 0xe5) { // magic number
-        fail("Not a valid config file");
+        fail("Not a valid config file\n");
     }
     if ((byte = getc(file)) != 0x76) { // magic number
-        fail("Not a valid config file");
+        fail("Not a valid config file\n");
     }
     getc(file); // version
     config.ethernet_slot = getc(file); // ethernet slot
@@ -58,9 +58,9 @@ void read_config() {
 
     config.nb_cities = getc(file);
     //printf("nb_cities=%d\n", config.nb_cities);
-    config.city_ids = safe_malloc(config.nb_cities * sizeof(char*));
+    config.city_ids = safe_malloc(config.nb_cities * sizeof(char*), "Array of CityID");
     for (i = 0; i < config.nb_cities; ++i) {
-        config.city_ids[i] = safe_malloc(9 * sizeof(char));
+        config.city_ids[i] = safe_malloc(9 * sizeof(char), "CityID");
         for (j = 0; j < 8; ++j) {
             config.city_ids[i][j] = getc(file); // city id
         }
@@ -93,10 +93,10 @@ void validate_config() {
     uint8_t at_least_one = 0;
     uint8_t i;
     if (strlen(config.app_id) != 32) {
-        fail("Invalid Weather App Id");
+        fail("Invalid Weather App Id: '%s'\n", config.app_id);
     }
     if (config.nb_cities == 0) {
-        fail("No cities configured.");
+        fail("No cities configured.\n");
     }
 }
 
