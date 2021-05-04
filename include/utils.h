@@ -18,4 +18,9 @@ void* safe_realloc(void *ptr, size_t size, char *msg);
 
 #define print_line() printf("---------------------------------------\n")
 
+#define KeyLeftArrow 0x08
+#define KeyRightArrow 0x15
+#define KeyUpArrow 0x0b
+#define KeyDownArrow 0x0a
+
 #endif

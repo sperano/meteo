@@ -1,10 +1,12 @@
-#include "config.h"
 #include <conio.h>
 #include <ctype.h>
+#include <peekpoke.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include "config.h"
+#include "gfx.h"
 #include "utils.h"
 
 /*
@@ -30,7 +32,29 @@ Config file structure:
 
 */
 
-static MeteoConfig config;
+MeteoConfig config;
+
+void save_config() {
+    uint8_t byte, i, j;
+    FILE *file = fopen(METEO_CONFIG_FILENAME, "w");
+    if (file == NULL) {
+        fail("Can't open config file\n");
+    }
+    putc(0xe5, file);
+    putc(0x76, file);
+    putc(0x01, file); // version
+    putc(config.ethernet_slot, file);
+    for (i = 0; i < 32; ++i) {
+        putc(config.app_id[i], file);
+    }
+    putc(config.nb_cities, file);
+    for (i = 0; i < config.nb_cities; ++i) {
+        for (j = 0; j < 8; ++j) {
+            putc(config.city_ids[i][j], file);
+        }
+    }
+    fclose(file);
+}
 
 void read_config() {
     uint8_t byte, i, j;
@@ -90,8 +114,8 @@ void print_config() {
 }
 
 void validate_config() {
-    uint8_t at_least_one = 0;
-    uint8_t i;
+    //uint8_t at_least_one = 0;
+    //uint8_t i;
     if (strlen(config.app_id) != 32) {
         fail("Invalid Weather App Id: '%s'\n", config.app_id);
     }
@@ -100,14 +124,183 @@ void validate_config() {
     }
 }
 
-void config_screen() {
-    uint8_t i;
-    clrscr();
-    printf("Meteo %s Configuration\n\n", METEO_VERSION);
-    printf("S) Save Configuration\n\nA) Edit AppID:\n   %s\n\nC) Add City\n", config.app_id);
-    for(i = 0; i < config.nb_cities; ++i) {
-        printf("%d) Edit %s\n", i + 1, config.city_ids[i]);
+void draw_menu(uint8_t selected, uint8_t choices, MenuItem config_menu[]) {
+    char buffer[40];
+    uint8_t i, j, k;
+    char c;
+    for (i = 0; i < choices; ++i) {
+        if (config_menu[i].name[0] != '-') {
+            strcpy(buffer, config_menu[i].name);
+            k = strlen(config_menu[i].name);
+            if (i == selected) {
+                for (j = 0; j < k; ++j) {
+                    c = buffer[j];
+                    if (isupper(c) || c == '[' || c == ']') {
+                        buffer[j] -= 0x40;
+                    }
+                }
+            } else {
+                for (j = 0; j < k; ++j) {
+                    buffer[j] += 0x80;
+                }
+            }
+            memcpy((void *)(VideoBases[5 + (i*2)]), buffer, strlen(buffer));
+        }
     }
-    printf("\nQ) Quit config\n");
-    cgetc();
+}
+
+uint8_t config_do_edit_app_id(void) {
+    char ch;
+    char id[32];
+    char *idptr = config.app_id;
+    uint8_t exit = 0;
+    uint8_t pos = 0;
+    //uint8_t current_value = config.ethernet_slot;
+    void *ptr = (void*)(VideoBases[7]+7);
+
+    memcpy(id, config.app_id, 32);
+    for (ch = 0; ch < 32; ++ch) {
+        if (id[ch] >= 'A' && id[ch] <= 'F') {
+            id[ch] -= 0x40;
+        }
+    }
+    clrscr();
+    printf("Meteo %s - Configuration\n\n\n\n\n\n\n\n\nAppID:\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nPress [Return] to exit.", METEO_VERSION);
+    while (!exit) {
+        id[pos] = id[pos] += 0x80;
+        //data[0] = '0' + current_value;
+        memcpy(ptr, id, 32);
+        ch = cgetc();
+
+        if (ch >= '0' && ch <= '9') {
+            id[pos] = ch;
+            pos = pos == 31 ? 31 : pos + 1;
+        } else if ((ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F')) {
+            id[pos] = toupper(ch) - 0x40;
+            pos = pos == 31 ? 31 : pos + 1;
+        } else {
+            switch (ch) {
+            case '\r':
+                id[pos] -= 0x80;
+                exit = 1;
+                break;
+            case KeyLeftArrow:
+                id[pos] -= 0x80;
+                if (pos) {
+                    pos--;
+                }
+                break;
+            case KeyRightArrow:
+                id[pos] -= 0x80;
+                if (pos < 31) {
+                    pos++;
+                }
+                break;
+            }
+        }
+
+    }
+    for (ch = 0; ch < 32; ++ch) {
+        idptr[ch] = id[ch];
+        if (idptr[ch] >= ('A'-0x40) && idptr[ch] <= ('F'-0x40)) {
+            idptr[ch] += 0x40;
+        }
+    }
+    //config.ethernet_slot = current_value;
+    return 0;
+}
+
+uint8_t config_do_edit_ethernet(void) {
+    char ch;
+    uint8_t current_value = config.ethernet_slot;
+    void *ptr = (void*)(VideoBases[5]+15);
+    char data[1];
+
+    clrscr();
+    printf("Meteo %s - Configuration\n\n\n\n\nEthernet Slot:\n\n\n\n\n\n\n\n\n\n\n\n\n\nEnter number or use arrow keys.\n\n\n\nPress [Return] to exit.", METEO_VERSION);
+    while (1) {
+        data[0] = '0' + current_value;
+        memcpy(ptr, data , 1);
+        ch = cgetc();
+        if (ch >= '1' && ch <= '7') {
+            current_value = ch - '0';
+        } else if (ch == '\r') {
+            break;
+        } else {
+            switch(ch) {
+            case KeyLeftArrow:
+            case KeyUpArrow:
+                current_value = current_value == 1 ? 7 : current_value - 1;
+                break;
+            case KeyRightArrow:
+            case KeyDownArrow:
+                current_value = current_value == 7 ? 1 : current_value + 1;
+                break;
+            }
+        }
+    }
+    config.ethernet_slot = current_value;
+    return 0;
+}
+
+uint8_t config_do_edit_cities(void) {
+    printf("Yep 3!");
+    return 0;
+}
+
+uint8_t config_do_quit(void) {
+    save_config();
+    return 1;
+}
+
+uint8_t config_do_cancel(void) {
+    free_config();
+    read_config();
+    return 1;
+}
+
+#define TOTAL_MENU_ITEMS 7
+void config_screen() {
+    static MenuItem config_menu[] = {
+        {"Ethernet Slot: 3", config_do_edit_ethernet},
+        {"AppID: 12345678901234567890123456789012", config_do_edit_app_id},
+        {"Cities (99)", config_do_edit_cities},
+        {"-"},
+        {"-"},
+        {"Save and quit configuration", config_do_quit},
+        {"Cancel", config_do_cancel},
+    };
+    uint8_t selected = 6;
+    char ch;
+    uint8_t exit = 0;
+
+    while (!exit) {
+        clrscr();
+        printf("Meteo %s - Configuration\n", METEO_VERSION);
+        sprintf(config_menu[0].name, "Ethernet Slot: %d", config.ethernet_slot);
+        sprintf(config_menu[1].name, "AppID: %s", config.app_id);
+        sprintf(config_menu[2].name, "Cities (%d)", config.nb_cities);
+        draw_menu(selected, TOTAL_MENU_ITEMS, config_menu);
+        ch = cgetc();
+        //printf("%x ", ch);
+        switch (ch) {
+        case KeyLeftArrow:
+        case KeyUpArrow:
+            do {
+                selected = selected ? selected - 1 : TOTAL_MENU_ITEMS - 1;
+            } while(config_menu[selected].name[0] == '-');
+            break;
+        case KeyRightArrow:
+        case KeyDownArrow:
+        case '\t':
+            do {
+                selected = selected == TOTAL_MENU_ITEMS - 1 ? 0 : selected + 1;
+            } while(config_menu[selected].name[0] == '-');
+            break;
+        case ' ':
+        case '\r':
+            exit = config_menu[selected].action();
+            break;
+        }
+    }
 }

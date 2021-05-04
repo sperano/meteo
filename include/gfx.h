@@ -3,7 +3,9 @@
 
 #include "types.h"
 
-#define _80STORE 0xc001
+#define _80STOREON 0xc001
+#define _80COLON 0xc00d
+#define ALTCHARSETOFF 0xc00e
 #define TEXTOFF 0xc050
 #define TEXTON 0xc051
 #define MIXEDOFF 0xc052
@@ -20,5 +22,7 @@ void set_menu_text(void);
 void update_gfx_text(CityWeather *cw, enum Units units);
 void update_gfx_image(CityWeather *cw);
 Bitmap get_bitmap_for_icon(char *icon);
+
+extern uint16_t VideoBases[24];
 
 #endif

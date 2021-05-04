@@ -47,6 +47,13 @@ typedef struct {
     char *filename;
 } IconMapping;
 
+typedef uint8_t (*MenuAction)(void);
+
+typedef struct {
+    char *name;
+    MenuAction action;
+} MenuItem;
+
 
 /*
 typedef struct {

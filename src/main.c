@@ -4,6 +4,7 @@
 // http://openweathermap.org/img/w/01d.png
 // http://openweathermap.org/img/w/01n.png
 #include <conio.h>
+#include <peekpoke.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -45,14 +46,12 @@ void prev_city_index() {
     current_city = cities[city_idx];
 }
 
-#ifndef MOCK_IP65
-#endif
-
 // TODO test when there is 0 in config!
 int main(void) {
     char ch;
     FILE *file;
 
+    //POKE(_80COLON, 1);
     printf("Meteo version %s\nby Eric Sperano (2021)\n\n", METEO_VERSION);
     read_config();
     print_config();
