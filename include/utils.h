@@ -18,6 +18,8 @@ void* safe_realloc(void *ptr, size_t size, char *msg);
 
 const char* utf8_to_ascii(const char *);
 
+void draw_menu(uint8_t y, uint8_t selected, uint8_t choices, MenuItem config_menu[]);
+
 //#define print_line() printf("---------------------------------------\n")
 
 #define KeyLeftArrow 0x08

@@ -1,9 +1,11 @@
 #include <conio.h>
+#include <ctype.h>
 #include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "gfx.h"
 #include "utils.h"
 
 uint16_t str_to_int(const char *src) {
@@ -119,4 +121,29 @@ const char *utf8_to_ascii(const char *str) {
     }
     *str1 = 0;
     return str;
+}
+
+void draw_menu(uint8_t y, uint8_t selected, uint8_t choices, MenuItem config_menu[]) {
+    char buffer[40];
+    uint8_t i, j, k;
+    char c;
+    for (i = 0; i < choices; ++i) {
+        if (config_menu[i].name[0] != '-') {
+            strcpy(buffer, config_menu[i].name);
+            k = strlen(config_menu[i].name);
+            if (i == selected) {
+                for (j = 0; j < k; ++j) {
+                    c = buffer[j];
+                    if (isupper(c) || c == '[' || c == ']') {
+                        buffer[j] -= 0x40;
+                    }
+                }
+            } else {
+                for (j = 0; j < k; ++j) {
+                    buffer[j] += 0x80;
+                }
+            }
+            memcpy((void *)(VideoBases[y + (i*2)]+2), buffer, strlen(buffer));
+        }
+    }
 }

@@ -167,30 +167,6 @@ MeteoState validate_config_cities(MeteoConfig *config) {
     return config->nb_cities ? OK : ConfigInvalidNoCity;
 }
 
-void draw_menu(uint8_t y, uint8_t gap_factor, uint8_t selected, uint8_t choices, MenuItem config_menu[]) {
-    char buffer[40];
-    uint8_t i, j, k;
-    char c;
-    for (i = 0; i < choices; ++i) {
-        if (config_menu[i].name[0] != '-') {
-            strcpy(buffer, config_menu[i].name);
-            k = strlen(config_menu[i].name);
-            if (i == selected) {
-                for (j = 0; j < k; ++j) {
-                    c = buffer[j];
-                    if (isupper(c) || c == '[' || c == ']') {
-                        buffer[j] -= 0x40;
-                    }
-                }
-            } else {
-                for (j = 0; j < k; ++j) {
-                    buffer[j] += 0x80;
-                }
-            }
-            memcpy((void *)(VideoBases[y + (i*gap_factor)]+2), buffer, strlen(buffer));
-        }
-    }
-}
 
 uint8_t config_edit_ethernet_slot2(MeteoConfig *config, char *msg) {
     return config_edit_ethernet_slot(config, msg, 0);
@@ -209,7 +185,7 @@ uint8_t config_edit_ethernet_slot(MeteoConfig *config, char *msg, uint8_t escape
     print_config_header();
     printf("\nThe ethernet card is usually\ninstalled in slot #%d.\n\n\n"
            "Ethernet Slot: #\n\n"
-           "Enter number between 1 and 7\nor use arrow keys.\n\n"
+           "Enter a number between 1 and 7\nor use the arrow keys.\n\n"
            "\n\n\n\n%s\n\n\n\n\n\n", ETH_INIT_DEFAULT, msg == NULL ? "" : msg);
     if (escape) {
         printf("Press [Return] to continue.\nPress [Esc] to exit.");
@@ -339,44 +315,42 @@ uint8_t config_edit_cities(MeteoConfig *config, char *msg, uint8_t flag) {
     }
     menu[nb_cities].name = "-";
     menu[nb_cities + 1].name = "Add a city";
-    menu[nb_cities + 2].name = "-";
-    menu[nb_cities + 3].name = "Previous menu";
+    menu[nb_cities + 2].name = "Previous menu";
 
+    clrscr();
+    print_config_header();
+        //printf("\nFind the ID for your city in this file:\n"
+        //       "http://bulk.openweathermap.org/sample/city.list.json.gz\n"
+        //       "\n\n\n\n\n%s", msg == NULL ? "" : msg);
     while (!exit) {
-        clrscr();
-        print_config_header();
-        printf("\nFind the ID for your city in this file:\n"
-               "http://bulk.openweathermap.org/sample/city.list.json.gz\n"
-               "\n\n\n\n\n%s", msg == NULL ? "" : msg);
-
-        draw_menu(8, 1, selected, nb_cities + 4, menu);
+        draw_menu(4, selected, nb_cities + 3, menu);
         ch = cgetc();
-        //printf("%x ", ch);
         switch (ch) {
         case KeyLeftArrow:
         case KeyUpArrow:
             do {
-                selected = selected ? selected - 1 : nb_cities + 3;
+                selected = selected ? selected - 1 : nb_cities + 2;
             } while(menu[selected].name[0] == '-');
             break;
         case KeyRightArrow:
         case KeyDownArrow:
         case '\t':
             do {
-                selected = selected == nb_cities + 3 ? 0 : selected + 1;
+                selected = selected == nb_cities + 2 ? 0 : selected + 1;
             } while(menu[selected].name[0] == '-');
             break;
         case ' ':
         case '\r':
-            if (selected == nb_cities + 3) {
+            if (selected >= 0 && selected <= nb_cities) {
+
+            } else if (selected == nb_cities + 1) {
+
+            } else if (selected == nb_cities + 2) {
                 exit = 1;
             }
-            //exit = config_menu[selected].action(config, NULL, 0);
             break;
         }
     }
-
-
     //cgetc();
     free(menu);
     return 0;
@@ -408,13 +382,13 @@ void config_screen(MeteoConfig *config) {
     char ch;
     uint8_t exit = 0;
 
+    clrscr();
+    print_config_header();
     while (!exit) {
-        clrscr();
-        print_config_header();
         //sprintf(config_menu[0].name, "Ethernet Slot: %d", config.ethernet_slot);
         //sprintf(config_menu[1].name, "AppID: %s", config.api_key);
         //sprintf(config_menu[2].name, "Cities (%d)", config.nb_cities);
-        draw_menu(4, 2, selected, TOTAL_MENU_ITEMS, config_menu);
+        draw_menu(4, selected, TOTAL_MENU_ITEMS, config_menu);
         ch = cgetc();
         //printf("%x ", ch);
         switch (ch) {
@@ -434,6 +408,8 @@ void config_screen(MeteoConfig *config) {
         case ' ':
         case '\r':
             exit = config_menu[selected].action(config, NULL, 0);
+            clrscr();
+            print_config_header();
             break;
         }
     }
