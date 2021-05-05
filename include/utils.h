@@ -16,11 +16,13 @@ void fail(const char *fmt, ...);
 void* safe_malloc(size_t size, char *msg);
 void* safe_realloc(void *ptr, size_t size, char *msg);
 
-#define print_line() printf("---------------------------------------\n")
+const char* utf8_to_ascii(const char *);
+
+//#define print_line() printf("---------------------------------------\n")
 
 #define KeyLeftArrow 0x08
 #define KeyRightArrow 0x15
 #define KeyUpArrow 0x0b
 #define KeyDownArrow 0x0a
-
+#define KeyEscape 0x1b
 #endif

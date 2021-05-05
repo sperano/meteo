@@ -66,7 +66,7 @@ int8_t my_callback(j65_parser *p, uint8_t event) {
             current_state = PARSER_GET_TEMP;
             break;
         case PARSER_GET_CITY_NAME:
-            cw->city_name = alloc_cpy(j65_get_string(p));
+            cw->city_name = alloc_cpy(utf8_to_ascii(j65_get_string(p)));
             current_state = PARSER_END;
             break;
         }

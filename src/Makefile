@@ -28,7 +28,7 @@ fetch.bin: $(OBJS2)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 %.o: %.c $(DEPS)
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) --listing $<.lst --add-source -c $< -o $@
 
 .PHONY: clean
 

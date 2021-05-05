@@ -9,7 +9,8 @@ int main(void) {
         test_kelvin_to_celsius,
         test_celsius_to_fahrenheit,
         test_celsius_str,
-        test_prepare_text,
+        test_utf8_to_ascii,
+        //test_prepare_text,
     };
 
     for (i = 0; i < MAX_TESTS; ++i) {

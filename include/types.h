@@ -3,7 +3,18 @@
 
 #include <stdint.h>
 
-enum Units{Celsius, Fahrenheit};
+typedef enum {
+    OK,
+    ConfigOpenError,
+    ConfigInvalidMagic,
+    ConfigInvalidApiKey,
+    ConfigInvalidEthernetSlot,
+    ConfigInvalidNoCity,
+    EthernetInitFailed,
+    DHCPInitFailed,
+} MeteoState;
+
+typedef enum {Celsius, Fahrenheit} Units;
 
 // kelvin has 2 "decimals"
 // exemple: 273.15 kelvin is stored as 27315
@@ -20,7 +31,7 @@ typedef uint8_t fahrenheit;
 typedef uint8_t **Bitmap;
 
 typedef struct {
-    char *id;
+    char id[9];
     char *city_name;
     char *weather;
     char *description;
@@ -47,7 +58,17 @@ typedef struct {
     char *filename;
 } IconMapping;
 
-typedef uint8_t (*MenuAction)(void);
+typedef struct MeteoConfig {
+    uint8_t ethernet_slot;
+    char api_key[33];
+    uint8_t nb_cities;
+    CityWeather *cities;
+    //char **city_ids;
+    uint8_t dirty;
+} MeteoConfig;
+
+#define ESCAPE_TO_EXIT 1
+typedef uint8_t (*MenuAction)(MeteoConfig *config, char *msg, uint8_t flag);
 
 typedef struct {
     char *name;

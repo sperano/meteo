@@ -44,7 +44,7 @@ void set_menu_text(void) {
     memcpy((void *)VideoBases[23], menu_str, 40);
 }
 
-void update_gfx_text(CityWeather *cw, enum Units units) {
+void update_gfx_text(CityWeather *cw, Units units) {
     static char line1[41] = {0};
     static char line2[41] = {0};
     static char line3[41] = {0};

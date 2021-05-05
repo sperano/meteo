@@ -34,6 +34,17 @@ void test_celsius_str(void) {
     assert(!strcmp("20", buffer));
 }
 
+void test_utf8_to_ascii(void) {
+    char str1[] = {'M', 'o', 'n', 't', 'r', 0xc3, 0xa9,'a', 'l', 0};
+    char str2[] = {'M', 'o', 'n', 't', 'r', 0xc3, 0xa8,'a', 'l', 0};
+
+    assert(!strcmp("Montreal", utf8_to_ascii("Montreal")));
+    //printf("%s\n", utf8_to_ascii(str1));
+    assert(!strcmp("Montreal", utf8_to_ascii(str1)));
+    assert(!strcmp(str2, utf8_to_ascii(str2)));
+}
+
+/*
 void test_prepare_text(void) {
     CityWeather cw;
     cw.city_name = "Los Altos";
@@ -55,3 +66,4 @@ void test_prepare_text(void) {
     //assert(!strcmp("C:Configure | U:Unit | Q:Quit           ", cw.text_lines[3]));
 
 }
+*/

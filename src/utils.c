@@ -70,7 +70,9 @@ void fail(const char *fmt, ...) {
     vprintf(fmt, args);
     va_end(args);
     printf("Press any key to exit.\n");
+#ifndef NOCONSOLE
     cgetc();
+#endif
     exit(1);
 }
 
@@ -88,4 +90,33 @@ void* safe_realloc(void *ptr, size_t size, char *msg) {
         fail("safe_realloc size: %d (%s)\n", size, msg);
     }
     return p;
+}
+
+const char *utf8_to_ascii(const char *str) {
+    char *str1 = (char *)str;
+    char *str2 = (char *)str;
+    while(*str2) {
+        switch(*str2) {
+        case 0xc3:
+            str2++;
+            switch(*str2) {
+            case 0xa9:
+                *str1 = 'e';
+                break;
+            default:
+                *str1 = 0xc3;
+            str1++;
+                *str1 = *str2;
+                break;
+            }
+            break;
+        default:
+            *str1 = *str2;
+            break;
+        }
+        str1++;
+        str2++;
+    }
+    *str1 = 0;
+    return str;
 }

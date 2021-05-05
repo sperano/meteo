@@ -4,21 +4,25 @@
 #define METEO_CONFIG_FILENAME "METEO.CFG"
 
 #include <stdint.h>
+#include "types.h"
 
-typedef struct MeteoConfig {
-    uint8_t ethernet_slot;
-    char app_id[33];
-    uint8_t nb_cities;
-    char **city_ids;
-} MeteoConfig;
+void init_default_config(MeteoConfig *config);
+void free_config(MeteoConfig *config);
+void print_config(MeteoConfig *config);
 
-void read_config();
-void free_config();
-void save_config();
-void validate_config();
-void print_config();
-void config_screen();
+MeteoState read_config(MeteoConfig *config);
+void save_config(MeteoConfig *config);
 
-extern MeteoConfig config;
+MeteoState validate_config_ethernet(MeteoConfig *config);
+MeteoState validate_config_api_key(MeteoConfig *config);
+MeteoState validate_config_cities(MeteoConfig *config);
+
+//void ensure_config(MeteoConfig *config);
+
+void config_screen(MeteoConfig *config);
+
+uint8_t config_edit_ethernet_slot(MeteoConfig *config, char *msg, uint8_t flag);
+uint8_t config_edit_api_key(MeteoConfig *config, char *msg, uint8_t flag);
+uint8_t config_edit_cities(MeteoConfig *config, char *msg, uint8_t flag);
 
 #endif

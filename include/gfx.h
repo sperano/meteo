@@ -19,7 +19,7 @@ void init_gfx(void);
 void exit_gfx(void);
 void clear_screen(void);
 void set_menu_text(void);
-void update_gfx_text(CityWeather *cw, enum Units units);
+void update_gfx_text(CityWeather *cw, Units units);
 void update_gfx_image(CityWeather *cw);
 Bitmap get_bitmap_for_icon(char *icon);
 

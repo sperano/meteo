@@ -14,11 +14,6 @@
 //#include "parser.h"
 #include "utils.h"
 
-static CityWeather **cities;
-static int8_t city_idx = 0;
-static CityWeather *current_city;
-static enum Units current_units = Celsius;
-
 void print_city_weather(CityWeather *cw) {
     char buffer[5];
     printf("%s: %s (%s)\n", cw->city_name, cw->weather, cw->description);
@@ -32,81 +27,139 @@ void print_city_weather(CityWeather *cw) {
     //printf("Humidity: %d\n", cw->humidity);
 }
 
-void next_city_index() {
-    if (++city_idx == config.nb_cities) {
-        city_idx = 0;
-    }
-    current_city = cities[city_idx];
-}
+void init_cities_weather_data(MeteoConfig *config) {
+    CityWeather *current_city;
+    uint8_t i = 0;
 
-void prev_city_index() {
-    if (--city_idx < 0) {
-        city_idx = config.nb_cities - 1;
-    }
-    current_city = cities[city_idx];
-}
-
-// TODO test when there is 0 in config!
-int main(void) {
-    char ch;
-    FILE *file;
-
-    //POKE(_80COLON, 1);
-    printf("Meteo version %s\nby Eric Sperano (2021)\n\n", METEO_VERSION);
-    read_config();
-    print_config();
-    validate_config();
-    init_net();
-
-    cities = safe_malloc(config.nb_cities * sizeof(CityWeather*), "Array of CityWeather*");
-    for (ch = 0; ch < config.nb_cities; ++ch) {
+    for (; i < config->nb_cities; ++i) {
         printf("\n");
-        //print_line();
-        current_city = cities[ch] = download_weather_data(config.city_ids[ch]);
+        current_city = &config->cities[i];
+        download_weather_data(config->api_key, current_city);
         if (current_city) {
             print_city_weather(current_city);
             current_city->bitmap = get_bitmap_for_icon(current_city->icon);
-            //free(current_city->icon); // we won't use it anymore
         }
     }
-    //free_config(cfg);
-    //cgetc();
+}
 
-    init_gfx();
-    clear_screen();
-    current_city = cities[city_idx];
-    set_menu_text();
+void handle_keyboard(MeteoConfig *config) {
+    int8_t city_idx = 0;
+    Units current_units = Celsius;
+    CityWeather *current_city;
     while (1) {
+        current_city = &config->cities[city_idx];
         update_gfx_image(current_city);
         update_gfx_text(current_city, current_units);
-        ch = cgetc();
-        switch (ch) {
+        switch (cgetc()) {
         case 'c':
         case 'C':
             exit_gfx();
-            config_screen();
+            config_screen(config);
             init_gfx();
             set_menu_text();
             break;
         case 'q':
         case 'Q':
-            goto exit;
+            return;
         case 'u':
         case 'U':
             current_units = !current_units;
             break;
         case 8:
-            prev_city_index();
+            if (--city_idx < 0) {
+                city_idx = config->nb_cities - 1;
+            }
             break;
         case 21:
         case ' ':
-            next_city_index();
+            if (++city_idx == config->nb_cities) {
+                city_idx = 0;
+            }
             break;
         }
     }
-exit:
+}
+
+void init(MeteoConfig *config) {
+    MeteoState state = read_config(config);
+    char ip_addr[IP_ADDR_STR_LENGTH];
+    //NetState net_state;
+    if (state != OK) {
+        switch (state) {
+        case ConfigOpenError:
+            printf("Can't open config file \"%s\".\n", METEO_CONFIG_FILENAME);
+            break;
+        case ConfigInvalidMagic:
+            printf("Invalid config magic number.\n");
+            break;
+        }
+        printf("Using default configuration.\n");
+        init_default_config(config);
+    }
+    print_config(config);
+    /////////////////////
+    do {
+        printf("Validating Ethernet slot...\n");
+        state = validate_config_ethernet(config);
+        if (state == OK) {
+            printf("Intializing Ethernet card...\n");
+            state = init_ethernet(config);
+            if (state == OK) {
+                printf("Obtaining an IP address with DHCP...\n");
+                state = init_dhcp(config);
+                if (state == OK) {
+                    get_ip_addr(ip_addr);
+                    printf("IP Address: %s\n", ip_addr);
+                    printf("Validating API Key...\n");
+                    state = validate_config_api_key(config);
+                    if (state == OK) {
+                        printf("Validating Cities...\n");
+                        state = validate_config_cities(config);
+                        if (state == OK) {
+
+                        } else {
+                            config_edit_cities(config, "TODO!", ESCAPE_TO_EXIT);
+                            clrscr();
+                        }
+                    } else {
+                        config_edit_api_key(config, NULL, ESCAPE_TO_EXIT);
+                        clrscr();
+                    }
+                } else {
+                    config_edit_ethernet_slot(config, ">>> Failed to get an IP Address.", 1);
+                    clrscr();
+                }
+            } else {
+                config_edit_ethernet_slot(config, ">>> Failed to initialize Ethernet.", 1);
+                clrscr();
+            }
+        } else {
+            config_edit_ethernet_slot(config, NULL, 1);
+            clrscr();
+        }
+    } while (state != OK);
+    if (config->dirty) {
+        save_config(config);
+    }
+}
+
+// TODO test when there is 0 in config!
+int main(void) {
+    MeteoConfig config;
+
+    //POKE(_80COLON, 1);
+    printf("Meteo version %s\nby Eric Sperano (2021)\n\n", METEO_VERSION);
+    init(&config);
+
+    init_cities_weather_data(&config);
+    //cgetc();
+    init_gfx();
+    clear_screen();
+    set_menu_text();
+    handle_keyboard(&config);
     exit_gfx();
     clrscr();
+    free_config(&config);
     /*
     free(cw->city_name);
     free(cw->weather);
