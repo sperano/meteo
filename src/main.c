@@ -27,21 +27,6 @@ void print_city_weather(CityWeather *cw) {
     //printf("Humidity: %d\n", cw->humidity);
 }
 
-void init_cities_weather_data(MeteoConfig *config) {
-    CityWeather *current_city;
-    uint8_t i = 0;
-
-    for (; i < config->nb_cities; ++i) {
-        printf("\n");
-        current_city = &config->cities[i];
-        download_weather_data(config->api_key, current_city);
-        if (current_city) {
-            print_city_weather(current_city);
-            current_city->bitmap = get_bitmap_for_icon(current_city->icon);
-        }
-    }
-}
-
 void handle_keyboard(MeteoConfig *config) {
     int8_t city_idx = 0;
     Units current_units = Celsius;
@@ -83,7 +68,9 @@ void handle_keyboard(MeteoConfig *config) {
 void init(MeteoConfig *config) {
     MeteoState state = read_config(config);
     char ip_addr[IP_ADDR_STR_LENGTH];
-    //NetState net_state;
+    uint8_t i = 0;
+    CityWeather *city;
+
     if (state != OK) {
         switch (state) {
         case ConfigOpenError:
@@ -116,9 +103,15 @@ void init(MeteoConfig *config) {
                         printf("Validating Cities...\n");
                         state = validate_config_cities(config);
                         if (state == OK) {
-
+                            for (; i < config->nb_cities; ++i) {
+                                printf("\n");
+                                city = &config->cities[i];
+                                download_weather_data(config->api_key, city); // TODO test failure
+                                print_city_weather(city);
+                                city->bitmap = get_bitmap_for_icon(city->icon);
+                            }
                         } else {
-                            config_edit_cities(config, "TODO!", ESCAPE_TO_EXIT);
+                            config_edit_cities(config, "No cities entered.", ESCAPE_TO_EXIT);
                             clrscr();
                         }
                     } else {
@@ -150,8 +143,6 @@ int main(void) {
     //POKE(_80COLON, 1);
     printf("Meteo version %s\nby Eric Sperano (2021)\n\n", METEO_VERSION);
     init(&config);
-
-    init_cities_weather_data(&config);
     //cgetc();
     init_gfx();
     clear_screen();
