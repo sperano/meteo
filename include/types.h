@@ -61,6 +61,7 @@ typedef struct {
 typedef struct MeteoConfig {
     uint8_t ethernet_slot;
     char api_key[33];
+    Units default_units;
     uint8_t nb_cities;
     CityWeather *cities;
     //char **city_ids;

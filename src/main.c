@@ -29,7 +29,7 @@ void print_city_weather(CityWeather *cw) {
 
 void handle_keyboard(MeteoConfig *config) {
     int8_t city_idx = 0;
-    Units current_units = Celsius;
+    Units current_units = config->default_units;
     CityWeather *current_city;
     while (1) {
         current_city = &config->cities[city_idx];

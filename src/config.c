@@ -20,14 +20,16 @@ Config file structure:
 |  3 | Version
 +----+
 |  4 | Ethernet Slot
++----+
+|  5 | Default Units
 +----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
-|  5 |  6 |  7 |  8 |  9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25 | 26 | 27 | 28 | 29 | 30 | 31 | 32 | 33 | 34 | 35 | 36 | AppId
-+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
-| 37 | Cities count
+|  6 |  7 |  8 |  9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25 | 26 | 27 | 28 | 29 | 30 | 31 | 32 | 33 | 34 | 35 | 36 | 37 | AppId
++----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+| 38 | Cities count
 +----+----+----+----+----+----+----+----+
-| 38 | 39 | 40 | 41 | 42 | 43 | 44 | 45 | CityID #1 (Always 8 bytes)
+| 39 | 40 | 41 | 42 | 43 | 44 | 45 | 46 | CityID #1 (Always 8 bytes)
 +----+----+----+----+----+----+----+----+
-| 46 | 47 | 48 | 49 | 50 | 51 | 52 | 53 | CityID #2
+| 47 | 48 | 49 | 50 | 51 | 52 | 53 | 54 | CityID #2
 +----+----+----+----+----+----+----+----+
  Etc...
 
@@ -45,6 +47,7 @@ void init_default_config(MeteoConfig *config) {
     }
     config->api_key[32] = 0;
     config->ethernet_slot = ETH_INIT_DEFAULT;
+    config->default_units = Fahrenheit;
     config->nb_cities = 0;
     config->dirty = 1;
 }
@@ -87,6 +90,8 @@ void save_config(MeteoConfig *config) {
     putc(0x76, file);
     putc(0x01, file); // version
     putc(config->ethernet_slot, file);
+    putc(config->default_units == Celsius ?
+        CONFIG_DEFAULT_UNITS_CELCIUS : CONFIG_DEFAULT_UNITS_FAHRENHEIT, file);
     for (i = 0; i < 32; ++i) {
         putc(config->api_key[i], file);
     }
@@ -121,6 +126,14 @@ MeteoState read_config(MeteoConfig *config) {
     }
     getc(file); // version
     config->ethernet_slot = getc(file); // ethernet slot
+    switch (getc(file)) {
+    case CONFIG_DEFAULT_UNITS_CELCIUS:
+        config->default_units = Celsius;
+        break;
+    case CONFIG_DEFAULT_UNITS_FAHRENHEIT:
+        config->default_units = Fahrenheit;
+        break;
+    }
     for (i = 0; i < 32; ++i) {
         config->api_key[i] = getc(file); // app id
     }
@@ -310,6 +323,7 @@ uint8_t config_edit_cities(MeteoConfig *config, char *msg, uint8_t flag) {
     char ch;
     uint8_t exit = 0;
 
+    // TODO fixed width of menu items like main config menu
     for(; i < nb_cities; ++i) {
         menu[i].name = config->cities[i].city_name;
     }
@@ -342,10 +356,14 @@ uint8_t config_edit_cities(MeteoConfig *config, char *msg, uint8_t flag) {
         case ' ':
         case '\r':
             if (selected >= 0 && selected <= nb_cities) {
-
+                config_edit_city(config, selected, NULL, 0);
+                clrscr();
+                print_config_header(); // probably refresh everything!
             } else if (selected == nb_cities + 1) {
+                // add
 
             } else if (selected == nb_cities + 2) {
+                // previous menu
                 exit = 1;
             }
             break;
@@ -356,23 +374,126 @@ uint8_t config_edit_cities(MeteoConfig *config, char *msg, uint8_t flag) {
     return 0;
 }
 
-uint8_t config_do_quit(MeteoConfig *config, char *, uint8_t) {
+#define CONFIG_EDIT_CITY_MENU_SIZE 4
+uint8_t config_edit_city(MeteoConfig *config, uint8_t city_idx, char *msg, uint8_t flag) {
+    static MenuItem menu[] = {
+        {"Edit ID                ", NULL},
+        {"Delete city            ", NULL},
+        {"Fetch data             ", NULL},
+        {"Previous Menu          ", NULL},
+    };
+    CityWeather *cw = &config->cities[city_idx];
+    uint8_t exit = 0;
+    uint8_t selected = 0;
+
+    clrscr();
+    print_config_header();
+    printf("\n %s (%s)\n", cw->city_name, cw->id);
+    if (config->default_units == Celsius) {
+        printf(" Temp: C\n");
+    } else {
+        printf(" Temp: F\n");
+    }
+    while (!exit) {
+        draw_menu(8, selected, CONFIG_EDIT_CITY_MENU_SIZE, menu);
+
+        cgetc();
+        exit = 1;
+    }
+    /*
+    while (!exit) {
+        draw_menu(4, selected, nb_cities + 3, menu);
+        ch = cgetc();
+        switch (ch) {
+        case KeyLeftArrow:
+        case KeyUpArrow:
+            do {
+                selected = selected ? selected - 1 : nb_cities + 2;
+            } while(menu[selected].name[0] == '-');
+            break;
+        case KeyRightArrow:
+        case KeyDownArrow:
+        case '\t':
+            do {
+                selected = selected == nb_cities + 2 ? 0 : selected + 1;
+            } while(menu[selected].name[0] == '-');
+            break;
+        case ' ':
+        case '\r':
+            if (selected >= 0 && selected <= nb_cities) {
+
+            } else if (selected == nb_cities + 1) {
+                // add
+
+            } else if (selected == nb_cities + 2) {
+                // previous menu
+                exit = 1;
+            }
+            break;
+        }
+    }
+    free(menu);
+    */
+    return 0;
+}
+
+uint8_t config_set_celcius(MeteoConfig *config, char *msg, uint8_t flag) {
+    config->default_units = Celsius;
+    return 1;
+}
+
+uint8_t config_set_fahrenheit(MeteoConfig *config, char *msg, uint8_t flag) {
+    config->default_units = Fahrenheit;
+    return 1;
+}
+
+uint8_t config_edit_default_units(MeteoConfig *config, char *msg, uint8_t flag) {
+    static MenuItem menu[] = {
+        {"Celcius              ", config_set_celcius},
+        {"Fahrenheit           ", config_set_fahrenheit},
+    };
+    uint8_t exit = 0;
+    uint8_t selected = config->default_units == Celsius ? 0 : 1;
+
+    clrscr();
+    print_config_header();
+    while (!exit) {
+        draw_menu(4, selected, 2, menu);
+        switch (cgetc()) {
+        case KeyLeftArrow:
+        case KeyUpArrow:
+        case KeyRightArrow:
+        case KeyDownArrow:
+        case '\t':
+            selected = !selected;
+            break;
+        case ' ':
+        case '\r':
+            exit = menu[selected].action(config, NULL, 0);
+            break;
+        }
+    }
+    return 0;
+}
+
+uint8_t config_do_quit(MeteoConfig *config, char *msg, uint8_t flag) {
     //save_config(config);
     return 1;
 }
 
-uint8_t config_do_cancel(MeteoConfig *config, char *, uint8_t) {
+uint8_t config_do_cancel(MeteoConfig *config, char *msg, uint8_t flag) {
     //free_config(config);
     //read_config(config);
     return 1;
 }
 
-#define TOTAL_MENU_ITEMS 7
+#define TOTAL_MENU_ITEMS 8 // TODO variable? sizeof...
 void config_screen(MeteoConfig *config) {
     static MenuItem config_menu[] = {
         {"Ethernet Slot              ", config_edit_ethernet_slot},
         {"API Key                    ", config_edit_api_key},
         {"Cities                     ", config_edit_cities},
+        {"Default Units              ", config_edit_default_units},
         {"-"},
         {"-"},
         {"Save and exit configuration", config_do_quit},
