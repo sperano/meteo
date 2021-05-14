@@ -10,6 +10,8 @@ int main(void) {
         test_celsius_to_fahrenheit,
         test_celsius_str,
         test_utf8_to_ascii,
+        test_init_config,
+        test_clone_config,
         //test_prepare_text,
     };
 

@@ -25,12 +25,6 @@ typedef enum {
 
 static ParserState current_state;
 
-char* alloc_cpy(const char *src) {
-    char *dest = safe_malloc(strlen(src) + 1, "String");
-    strcpy(dest, src);
-    return dest;
-}
-
 int8_t my_callback(j65_parser *p, uint8_t event) {
     const char *s;
     CityWeather *cw = j65_get_context(p);
@@ -54,19 +48,19 @@ int8_t my_callback(j65_parser *p, uint8_t event) {
     case J65_STRING:
         switch (current_state) {
         case PARSER_GET_WEATHER:
-            cw->weather = alloc_cpy(j65_get_string(p));
+            cw->weather = alloc_copy(j65_get_string(p));
             current_state = PARSER_GET_DESCRIPTION;
             break;
         case PARSER_GET_DESCRIPTION:
-            cw->description = alloc_cpy(j65_get_string(p));
+            cw->description = alloc_copy(j65_get_string(p));
             current_state = PARSER_GET_ICON;
             break;
         case PARSER_GET_ICON:
-            cw->icon = alloc_cpy(j65_get_string(p));
+            cw->icon = alloc_copy(j65_get_string(p));
             current_state = PARSER_GET_TEMP;
             break;
         case PARSER_GET_CITY_NAME:
-            cw->city_name = alloc_cpy(utf8_to_ascii(j65_get_string(p)));
+            cw->city_name = alloc_copy(utf8_to_ascii(j65_get_string(p)));
             current_state = PARSER_END;
             break;
         }

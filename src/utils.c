@@ -8,6 +8,12 @@
 #include "gfx.h"
 #include "utils.h"
 
+char* alloc_copy(const char *src) {
+    char *dest = safe_malloc(strlen(src) + 1);
+    strcpy(dest, src);
+    return dest;
+}
+
 uint16_t str_to_int(const char *src) {
     uint16_t value = 0;
     uint8_t dec = 0;
@@ -78,18 +84,18 @@ void fail(const char *fmt, ...) {
     exit(1);
 }
 
-void* safe_malloc(size_t size, char *msg) {
+void* safe_malloc(size_t size) {
     void *p = malloc(size);
     if (p == NULL) {
-        fail("safe_malloc size: %d (%s)\n", size, msg);
+        fail("safe_malloc size: %d\n", size);
     }
     return p;
 }
 
-void* safe_realloc(void *ptr, size_t size, char *msg) {
+void* safe_realloc(void *ptr, size_t size) {
     void *p = realloc(ptr, size);
     if (p == NULL) {
-        fail("safe_realloc size: %d (%s)\n", size, msg);
+        fail("safe_realloc size: %d\n", size);
     }
     return p;
 }
@@ -123,27 +129,73 @@ const char *utf8_to_ascii(const char *str) {
     return str;
 }
 
-void draw_menu(uint8_t y, uint8_t selected, uint8_t choices, MenuItem config_menu[]) {
-    char buffer[40];
-    uint8_t i, j, k;
+void draw_menu(Menu *menu, void *ctx) {
+    char buffer[41];
+    uint8_t i = 0, j;
+    uint8_t item_width = 0;
     char c;
-    for (i = 0; i < choices; ++i) {
-        if (config_menu[i].name[0] != '-') {
-            strcpy(buffer, config_menu[i].name);
-            k = strlen(config_menu[i].name);
-            if (i == selected) {
-                for (j = 0; j < k; ++j) {
+    for (; i < menu->total_items; ++i) {
+        j = strlen(menu->items[i].name);
+        if (j > item_width) {
+            item_width = j;
+        }
+    }
+    for (i = 0; i < menu->total_items; ++i) {
+        // skip separator or invisibile
+        if (menu->items[i].name[0] != '-' &&
+           (menu->items[i].visibility_check == NULL || menu->items[i].visibility_check(ctx))) {
+            snprintf(buffer, 40, "%-*s", item_width, menu->items[i].name);
+            if (i == menu->selected) {
+                for (j = 0; j < item_width; ++j) {
                     c = buffer[j];
                     if (isupper(c) || c == '[' || c == ']') {
                         buffer[j] -= 0x40;
                     }
                 }
             } else {
-                for (j = 0; j < k; ++j) {
+                for (j = 0; j < item_width; ++j) {
                     buffer[j] += 0x80;
                 }
             }
-            memcpy((void *)(VideoBases[y + (i*2)]+2), buffer, strlen(buffer));
+            memcpy((void *)(VideoBases[menu->y_pos + ( i* (1 + menu->interlines))] + menu->left_pad), buffer, item_width);
         }
     }
+}
+
+uint8_t do_menu(Menu *menu, void *ctx) {
+    uint8_t rc = 0;
+    uint8_t i = 0;
+#ifndef NOCONSOLE
+    if (menu->init) {
+        menu->init(menu);
+    }
+    while (rc == 0) {
+        draw_menu(menu, ctx);
+        switch (cgetc()) {
+        case KeyLeftArrow:
+        case KeyUpArrow:
+            do {
+                menu->selected = menu->selected ? menu->selected - 1 : menu->total_items - 1;
+            } while(menu->items[menu->selected].name[0] == '-' ||
+                    (menu->items[menu->selected].visibility_check != NULL && !menu->items[menu->selected].visibility_check(ctx)));
+            break;
+        case KeyRightArrow:
+        case KeyDownArrow:
+        case '\t':
+            do {
+                menu->selected = menu->selected - (menu->total_items - 1) ? menu->selected + 1 : 0;
+            } while(menu->items[menu->selected].name[0] == '-' ||
+                    (menu->items[menu->selected].visibility_check != NULL && !menu->items[menu->selected].visibility_check(ctx)));
+            break;
+        case ' ':
+        case '\r':
+            rc = menu->items[menu->selected].action(ctx, menu->selected, 0);
+            if (menu->init) {
+                menu->init(menu);
+            }
+            break;
+        }
+    }
+#endif
+    return rc;
 }

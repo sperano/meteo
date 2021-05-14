@@ -39,7 +39,7 @@ void handle_keyboard(MeteoConfig *config) {
         case 'c':
         case 'C':
             exit_gfx();
-            config_screen(config);
+            config = config_screen(config);
             init_gfx();
             set_menu_text();
             break;
@@ -65,10 +65,11 @@ void handle_keyboard(MeteoConfig *config) {
     }
 }
 
-void init(MeteoConfig *config) {
+MeteoConfig* init() {
+    MeteoConfig *config = init_config(NULL);
     MeteoState state = read_config(config);
-    char ip_addr[IP_ADDR_STR_LENGTH];
     uint8_t i = 0;
+    char ip_addr[IP_ADDR_STR_LENGTH];
     CityWeather *city;
 
     if (state != OK) {
@@ -81,7 +82,7 @@ void init(MeteoConfig *config) {
             break;
         }
         printf("Using default configuration.\n");
-        init_default_config(config);
+        init_config(config); // we don't realloc
     }
     print_config(config);
     /////////////////////
@@ -111,46 +112,51 @@ void init(MeteoConfig *config) {
                                 city->bitmap = get_bitmap_for_icon(city->icon);
                             }
                         } else {
-                            config_edit_cities(config, "No cities entered.", ESCAPE_TO_EXIT);
-                            clrscr();
+                            fail("TODO 1!");
+                            //config_edit_cities(config, "No cities entered.", ESCAPE_TO_EXIT);
+                            //clrscr();
                         }
                     } else {
-                        config_edit_api_key(config, NULL, ESCAPE_TO_EXIT);
-                        clrscr();
+                        fail("TODO 2!");
+                        //config_edit_api_key(config, NULL, ESCAPE_TO_EXIT);
+                        //clrscr();
                     }
                 } else {
-                    config_edit_ethernet_slot(config, ">>> Failed to get an IP Address.", 1);
-                    clrscr();
+                    fail("TODO 3!");
+                    //config_edit_ethernet_slot(config, ">>> Failed to get an IP Address.", 1);
+                    //clrscr();
                 }
             } else {
-                config_edit_ethernet_slot(config, ">>> Failed to initialize Ethernet.", 1);
-                clrscr();
+                fail("TODO 4!");
+                //config_edit_ethernet_slot(config, ">>> Failed to initialize Ethernet.", 1);
+                //clrscr();
             }
         } else {
-            config_edit_ethernet_slot(config, NULL, 1);
+            config_edit_ethernet_slot(config, 0, ESCAPE_TO_EXIT);
             clrscr();
         }
     } while (state != OK);
     if (config->dirty) {
         save_config(config);
     }
+    return config;
 }
 
 // TODO test when there is 0 in config!
 int main(void) {
-    MeteoConfig config;
+    MeteoConfig *config;
 
     //POKE(_80COLON, 1);
     printf("Meteo version %s\nby Eric Sperano (2021)\n\n", METEO_VERSION);
-    init(&config);
+    config = init();
     //cgetc();
     init_gfx();
     clear_screen();
     set_menu_text();
-    handle_keyboard(&config);
+    handle_keyboard(config);
     exit_gfx();
     clrscr();
-    free_config(&config);
+    free_config(config, true);
     /*
     free(cw->city_name);
     free(cw->weather);

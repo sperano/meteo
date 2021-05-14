@@ -1,6 +1,7 @@
 #ifndef _TYPES_H
 #define _TYPES_H
 
+#include <stdbool.h>
 #include <stdint.h>
 
 typedef enum {
@@ -64,23 +65,30 @@ typedef struct MeteoConfig {
     Units default_units;
     uint8_t nb_cities;
     CityWeather *cities;
-    //char **city_ids;
-    uint8_t dirty;
+    bool dirty;
 } MeteoConfig;
 
 #define ESCAPE_TO_EXIT 1
-typedef uint8_t (*MenuAction)(MeteoConfig *config, char *msg, uint8_t flag);
+typedef uint8_t (*MenuAction)(void *ctx, uint8_t idx, uint8_t flags);
+
+typedef bool (*MenuVisibilityCheck)(void *ctx);
 
 typedef struct {
     char *name;
     MenuAction action;
+    MenuVisibilityCheck visibility_check;
 } MenuItem;
 
+typedef struct Menu {
+    char *message;
+    uint8_t y_pos;
+    uint8_t interlines;
+    uint8_t selected;
+    //uint8_t item_width;
+    uint8_t left_pad;
+    uint8_t total_items;
+    MenuItem *items;
+    void (*init)(struct Menu *);
+} Menu;
 
-/*
-typedef struct {
-    char *icon;
-    Bitmap *bitmap;
-} IconBitmapPair;
-*/
 #endif

@@ -32,8 +32,8 @@ void init_net(void) {
 
 void download_weather_data(char *api_key, CityWeather *cw) {
     //static char url[128]; // must be 1460 bytes
-    char *url = safe_malloc(1460, "URL");
-    char *buffer = safe_malloc(SCRATCH_SIZE, "Scratch");
+    char *url = safe_malloc(1460);
+    char *buffer = safe_malloc(SCRATCH_SIZE);
     uint16_t len = 0;
     char *ptr = url;
 

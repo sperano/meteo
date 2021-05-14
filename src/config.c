@@ -40,8 +40,11 @@ Config file structure:
 /**
  *
  */
-void init_default_config(MeteoConfig *config) {
+MeteoConfig* init_config(MeteoConfig *config) {
     uint8_t i = 0;
+    if (config == NULL) {
+        config = safe_malloc(sizeof(MeteoConfig));
+    }
     for (; i < 32; ++i) {
         config->api_key[i] = '.';
     }
@@ -49,13 +52,49 @@ void init_default_config(MeteoConfig *config) {
     config->ethernet_slot = ETH_INIT_DEFAULT;
     config->default_units = Fahrenheit;
     config->nb_cities = 0;
-    config->dirty = 1;
+    config->cities = NULL;
+    config->dirty = false;
+    return config;
+}
+
+MeteoConfig* clone_config(MeteoConfig *dest, MeteoConfig *src) {
+    uint8_t i = 0;
+    CityWeather *cw_dest, *cw_src;
+
+    if (dest == NULL) {
+        dest = safe_malloc(sizeof(MeteoConfig));
+    }
+    dest->ethernet_slot = src->ethernet_slot;
+    dest->default_units = src->default_units;
+    dest->dirty = src->dirty;
+    strcpy(dest->api_key, src->api_key);
+    dest->nb_cities = src->nb_cities;
+    dest->cities = safe_malloc(dest->nb_cities * sizeof(CityWeather));
+    for (; i < dest->nb_cities; ++i) {
+        cw_dest = &dest->cities[i];
+        cw_src = &src->cities[i];
+
+        strcpy(cw_dest->id, cw_src->id);
+        cw_dest->city_name = alloc_copy(cw_src->city_name);
+        cw_dest->description = alloc_copy(cw_src->description);
+        cw_dest->icon = alloc_copy(cw_src->icon);
+        cw_dest->weather = alloc_copy(cw_src->weather);
+        cw_dest->temperatureC = cw_src->temperatureC;
+        cw_dest->minimumC = cw_src->minimumC;
+        cw_dest->maximumC = cw_src->maximumC;
+        cw_dest->temperatureF = cw_src->temperatureF;
+        cw_dest->minimumF = cw_src->minimumF;
+        cw_dest->maximumF = cw_src->maximumF;
+        cw_dest->humidity = cw_src->humidity;
+        cw_dest->bitmap = cw_src->bitmap;
+    }
+    return dest;
 }
 
 /**
  * Free the memory that is dynamically allocated in the MeteoConfig structure.
  */
-void free_config(MeteoConfig *config) {
+void free_config(MeteoConfig *config, bool free_ptr) {
     uint8_t i = 0;
     for (; i < config->nb_cities; ++i) {
         free(config->cities[i].city_name);
@@ -64,6 +103,9 @@ void free_config(MeteoConfig *config) {
         free(config->cities[i].icon);
     }
     free(config->cities);
+    if (free_ptr) {
+        free(config);
+    }
 }
 
 /**
@@ -140,7 +182,7 @@ MeteoState read_config(MeteoConfig *config) {
     config->api_key[32] = 0;
     config->nb_cities = getc(file);
     if (config->nb_cities > 0) {
-        config->cities = safe_malloc(config->nb_cities * sizeof(CityWeather), "Array of CityWeather");
+        config->cities = safe_malloc(config->nb_cities * sizeof(CityWeather));
     }
     for (i = 0; i < config->nb_cities; ++i) {
         //config->city_ids[i] = safe_malloc(9 * sizeof(char), "CityID");
@@ -180,17 +222,24 @@ MeteoState validate_config_cities(MeteoConfig *config) {
     return config->nb_cities ? OK : ConfigInvalidNoCity;
 }
 
-
-uint8_t config_edit_ethernet_slot2(MeteoConfig *config, char *msg) {
-    return config_edit_ethernet_slot(config, msg, 0);
+#pragma warn (unused-param, push, off)
+void config_menu_init(Menu *menu) {
+#ifndef NOCONSOLE
+    clrscr();
+#endif
+    print_config_header();
 }
+#pragma warn (unused-param, pop)
 
 /**
  *
  */
-uint8_t config_edit_ethernet_slot(MeteoConfig *config, char *msg, uint8_t escape) {
+#pragma warn (unused-param, push, off)
+uint8_t config_edit_ethernet_slot(void *ctx, uint8_t idx, uint8_t flags) {
+#ifndef NOCONSOLE
     char ch;
-    uint8_t current_value = config->ethernet_slot;
+    uint8_t current_value = ((MeteoConfig*)ctx)->ethernet_slot;
+    uint8_t orig_value = current_value;
     void *ptr = (void*)(VideoBases[7]+16);
     char data[1];
 
@@ -199,14 +248,13 @@ uint8_t config_edit_ethernet_slot(MeteoConfig *config, char *msg, uint8_t escape
     printf("\nThe ethernet card is usually\ninstalled in slot #%d.\n\n\n"
            "Ethernet Slot: #\n\n"
            "Enter a number between 1 and 7\nor use the arrow keys.\n\n"
-           "\n\n\n\n%s\n\n\n\n\n\n", ETH_INIT_DEFAULT, msg == NULL ? "" : msg);
-    if (escape) {
+           "\n\n\n\n\n\n\n\n\n\n", ETH_INIT_DEFAULT);
+    if (flags & ESCAPE_TO_EXIT) {
         printf("Press [Return] to continue.\nPress [Esc] to exit.");
     } else {
         printf("\nPress [Return] to continue.");
     }
-
-    while (1) {
+    while (true) {
         data[0] = '0' + current_value;
         memcpy(ptr, data , 1);
         ch = cgetc();
@@ -225,30 +273,36 @@ uint8_t config_edit_ethernet_slot(MeteoConfig *config, char *msg, uint8_t escape
                 current_value = current_value == 7 ? 1 : current_value + 1;
                 break;
             case KeyEscape:
-                if (escape) {
+                if (flags & ESCAPE_TO_EXIT) {
                     exit(1);
                 }
                 break;
             }
         }
     }
-    config->ethernet_slot = current_value;
-    config->dirty = 1;
+    ((MeteoConfig*)ctx)->ethernet_slot = current_value;
+    ((MeteoConfig*)ctx)->dirty = orig_value != current_value;
+#endif
     return 0;
 }
+#pragma warn (unused-param, pop)
 
 /**
  *
  */
-uint8_t config_edit_api_key(MeteoConfig *config, char *msg, uint8_t flag) {
+#pragma warn (unused-param, push, off)
+uint8_t config_edit_api_key(void *ctx, uint8_t idx, uint8_t flags) {
+#ifndef NOCONSOLE
     char ch;
     char id[32];
-    char *idptr = config->api_key;
-    uint8_t stop = 0;
+    char id_orig[33];
+    char *idptr = ((MeteoConfig*)ctx)->api_key;
+    bool stop = false;
     uint8_t pos = 0;
     void *ptr = (void*)(VideoBases[13]+4);
 
-    memcpy(id, config->api_key, 32);
+    memcpy(id, idptr, 32);
+    strcpy(id_orig, idptr);
     for (ch = 0; ch < 32; ++ch) {
         if (id[ch] >= 'A' && id[ch] <= 'F') {
             id[ch] -= 0x40;
@@ -258,18 +312,16 @@ uint8_t config_edit_api_key(MeteoConfig *config, char *msg, uint8_t flag) {
     print_config_header();
     printf("\nGenerate an API Key at:\nhttps://openweathermap.org\n\n"
            "The API Key is a 32 characters long\nhexadecimal string.\n\n\n\n"
-           "    API Key:\n\n\n\n\n%s\n\n\n\n", msg == NULL ? "" : msg);
-    if (flag & ESCAPE_TO_EXIT) {
+           "    API Key:\n\n\n\n\n\n\n\n\n");
+    if (flags & ESCAPE_TO_EXIT) {
         printf("Use Arrow keys to move cursor.\n\nPress [Return] to continue.\nPress [Esc] to exit.");
     } else {
         printf("\nUse Arrow keys to move cursor.\n\nPress [Return] to continue.");
     }
     while (!stop) {
         id[pos] = id[pos] += 0x80;
-        //data[0] = '0' + current_value;
         memcpy(ptr, id, 32);
         ch = cgetc();
-
         if (ch >= '0' && ch <= '9') {
             id[pos] = ch;
             pos = pos == 31 ? 31 : pos + 1;
@@ -295,7 +347,7 @@ uint8_t config_edit_api_key(MeteoConfig *config, char *msg, uint8_t flag) {
                 }
                 break;
             case KeyEscape:
-                if (flag & ESCAPE_TO_EXIT) {
+                if (flags & ESCAPE_TO_EXIT) {
                     exit(1);
                 }
                 break;
@@ -308,230 +360,183 @@ uint8_t config_edit_api_key(MeteoConfig *config, char *msg, uint8_t flag) {
             idptr[ch] += 0x40;
         }
     }
-    config->dirty = 1;
+    ((MeteoConfig*)ctx)->dirty = strcmp(id_orig, idptr) != 0;
+#endif
     return 0;
 }
+#pragma warn (unused-param, pop)
+
+#pragma warn (unused-param, push, off)
+uint8_t previous_menu(void *ctx, uint8_t idx, uint8_t flags) {
+    return EXIT_CONFIG;
+}
+#pragma warn (unused-param, pop)
 
 /**
  *
  */
-uint8_t config_edit_cities(MeteoConfig *config, char *msg, uint8_t flag) {
-    MenuItem *menu = safe_malloc((config->nb_cities + 4) * sizeof(MenuItem), "City MenuItem");
-    uint8_t i = 0;
+#pragma warn (unused-param, push, off)
+uint8_t config_edit_cities(void *ctx, uint8_t idx, uint8_t flags) {
+    MeteoConfig *config = (MeteoConfig*)ctx;
     uint8_t nb_cities = config->nb_cities;
-    uint8_t selected = 0;
-    char ch;
-    uint8_t exit = 0;
-
-    // TODO fixed width of menu items like main config menu
+    MenuItem *menu_items = safe_malloc((nb_cities + 3) * sizeof(MenuItem));
+    uint8_t i = 0;
+    Menu menu = {
+        "",
+        4,  // y
+        1, // interlines
+        0, // selected
+        DEFAULT_MENU_LEFT_PAD,
+        0, // total_items
+        NULL,
+        config_menu_init
+    };
+    menu.items = menu_items;
+    menu.total_items = nb_cities + 3;
     for(; i < nb_cities; ++i) {
-        menu[i].name = config->cities[i].city_name;
+        menu_items[i].name = config->cities[i].city_name;
+        menu_items[i].action = config_edit_city;
+        menu_items[i].visibility_check = NULL;
     }
-    menu[nb_cities].name = "-";
-    menu[nb_cities + 1].name = "Add a city";
-    menu[nb_cities + 2].name = "Previous menu";
-
-    clrscr();
-    print_config_header();
-        //printf("\nFind the ID for your city in this file:\n"
-        //       "http://bulk.openweathermap.org/sample/city.list.json.gz\n"
-        //       "\n\n\n\n\n%s", msg == NULL ? "" : msg);
-    while (!exit) {
-        draw_menu(4, selected, nb_cities + 3, menu);
-        ch = cgetc();
-        switch (ch) {
-        case KeyLeftArrow:
-        case KeyUpArrow:
-            do {
-                selected = selected ? selected - 1 : nb_cities + 2;
-            } while(menu[selected].name[0] == '-');
-            break;
-        case KeyRightArrow:
-        case KeyDownArrow:
-        case '\t':
-            do {
-                selected = selected == nb_cities + 2 ? 0 : selected + 1;
-            } while(menu[selected].name[0] == '-');
-            break;
-        case ' ':
-        case '\r':
-            if (selected >= 0 && selected <= nb_cities) {
-                config_edit_city(config, selected, NULL, 0);
-                clrscr();
-                print_config_header(); // probably refresh everything!
-            } else if (selected == nb_cities + 1) {
-                // add
-
-            } else if (selected == nb_cities + 2) {
-                // previous menu
-                exit = 1;
-            }
-            break;
-        }
-    }
-    //cgetc();
-    free(menu);
+    menu_items[nb_cities].name = "-";
+    menu_items[nb_cities].visibility_check = NULL;
+    menu_items[nb_cities + 1].name = "Add a city";
+    menu_items[nb_cities + 1].visibility_check = NULL;
+    menu_items[nb_cities + 2].name = "Previous menu";
+    menu_items[nb_cities + 2].action = previous_menu;
+    menu_items[nb_cities + 2].visibility_check = NULL;
+    do_menu(&menu, ctx);
+    free(menu_items);
     return 0;
 }
+#pragma warn (unused-param, pop)
 
-#define CONFIG_EDIT_CITY_MENU_SIZE 4
-uint8_t config_edit_city(MeteoConfig *config, uint8_t city_idx, char *msg, uint8_t flag) {
-    static MenuItem menu[] = {
-        {"Edit ID                ", NULL},
-        {"Delete city            ", NULL},
-        {"Fetch data             ", NULL},
-        {"Previous Menu          ", NULL},
+#pragma warn (unused-param, push, off)
+uint8_t config_edit_city(void *ctx, uint8_t idx, uint8_t flags) {
+    static MenuItem menu_items[] = {
+        {"Edit ID", NULL},
+        {"Delete city", NULL},
+        {"Fetch data", NULL},
+        {"Previous Menu", previous_menu},
     };
-    CityWeather *cw = &config->cities[city_idx];
-    uint8_t exit = 0;
-    uint8_t selected = 0;
-
-    clrscr();
-    print_config_header();
+    MeteoConfig *config = (MeteoConfig*)ctx;
+    CityWeather *cw = &config->cities[idx];
+    Menu menu = {
+        "",
+        8,  // y
+        1, // interlines
+        0, // selected
+        DEFAULT_MENU_LEFT_PAD,
+        4, // total_items
+        menu_items,
+        //config_menu_init
+    };
+    config_menu_init(&menu);
     printf("\n %s (%s)\n", cw->city_name, cw->id);
     if (config->default_units == Celsius) {
         printf(" Temp: C\n");
     } else {
         printf(" Temp: F\n");
     }
-    while (!exit) {
-        draw_menu(8, selected, CONFIG_EDIT_CITY_MENU_SIZE, menu);
-
-        cgetc();
-        exit = 1;
-    }
-    /*
-    while (!exit) {
-        draw_menu(4, selected, nb_cities + 3, menu);
-        ch = cgetc();
-        switch (ch) {
-        case KeyLeftArrow:
-        case KeyUpArrow:
-            do {
-                selected = selected ? selected - 1 : nb_cities + 2;
-            } while(menu[selected].name[0] == '-');
-            break;
-        case KeyRightArrow:
-        case KeyDownArrow:
-        case '\t':
-            do {
-                selected = selected == nb_cities + 2 ? 0 : selected + 1;
-            } while(menu[selected].name[0] == '-');
-            break;
-        case ' ':
-        case '\r':
-            if (selected >= 0 && selected <= nb_cities) {
-
-            } else if (selected == nb_cities + 1) {
-                // add
-
-            } else if (selected == nb_cities + 2) {
-                // previous menu
-                exit = 1;
-            }
-            break;
-        }
-    }
-    free(menu);
-    */
+    do_menu(&menu, ctx);
     return 0;
 }
+#pragma warn (unused-param, pop)
 
-uint8_t config_set_celcius(MeteoConfig *config, char *msg, uint8_t flag) {
+#pragma warn (unused-param, push, off)
+uint8_t config_set_celcius(void *ctx, uint8_t idx, uint8_t flags) {
+    MeteoConfig *config = (MeteoConfig*)ctx;
+    if (config->default_units == Fahrenheit) {
+        config->dirty = true;
+    }
     config->default_units = Celsius;
-    return 1;
+    return EXIT_CONFIG;
 }
+#pragma warn (unused-param, pop)
 
-uint8_t config_set_fahrenheit(MeteoConfig *config, char *msg, uint8_t flag) {
-    config->default_units = Fahrenheit;
-    return 1;
-}
-
-uint8_t config_edit_default_units(MeteoConfig *config, char *msg, uint8_t flag) {
-    static MenuItem menu[] = {
-        {"Celcius              ", config_set_celcius},
-        {"Fahrenheit           ", config_set_fahrenheit},
-    };
-    uint8_t exit = 0;
-    uint8_t selected = config->default_units == Celsius ? 0 : 1;
-
-    clrscr();
-    print_config_header();
-    while (!exit) {
-        draw_menu(4, selected, 2, menu);
-        switch (cgetc()) {
-        case KeyLeftArrow:
-        case KeyUpArrow:
-        case KeyRightArrow:
-        case KeyDownArrow:
-        case '\t':
-            selected = !selected;
-            break;
-        case ' ':
-        case '\r':
-            exit = menu[selected].action(config, NULL, 0);
-            break;
-        }
+#pragma warn (unused-param, push, off)
+uint8_t config_set_fahrenheit(void *ctx, uint8_t idx, uint8_t flags) {
+    MeteoConfig *config = (MeteoConfig*)ctx;
+    if (config->default_units == Celsius) {
+        config->dirty = true;
     }
+    config->default_units = Fahrenheit;
+    return EXIT_CONFIG;
+}
+#pragma warn (unused-param, pop)
+
+#pragma warn (unused-param, push, off)
+uint8_t config_edit_default_units(void *ctx, uint8_t idx, uint8_t flags) {
+    static MenuItem menu_items[] = {
+        {"Celcius", config_set_celcius},
+        {"Fahrenheit", config_set_fahrenheit},
+    };
+    Menu menu = {
+        "",
+        4,  // y
+        1, // interlines
+        0, // selected
+        DEFAULT_MENU_LEFT_PAD,
+        2, // total_items
+        menu_items,
+        config_menu_init
+    };
+    menu.selected = ((MeteoConfig*)ctx)->default_units == Fahrenheit;
+    do_menu(&menu, ctx);
     return 0;
 }
+#pragma warn (unused-param, pop)
 
-uint8_t config_do_quit(MeteoConfig *config, char *msg, uint8_t flag) {
-    //save_config(config);
-    return 1;
+#pragma warn (unused-param, push, off)
+uint8_t config_do_save_and_exit(void *ctx, uint8_t idx, uint8_t flags) {
+    return SAVE_CONFIG;
+}
+#pragma warn (unused-param, pop)
+
+#pragma warn (unused-param, push, off)
+bool config_do_cancel(void *ctx, uint8_t idx, uint8_t flags) {
+    return CANCEL_CONFIG;
+}
+#pragma warn (unused-param, pop)
+
+bool is_dirty(void *ctx) {
+    return ((MeteoConfig*)ctx)->dirty;
 }
 
-uint8_t config_do_cancel(MeteoConfig *config, char *msg, uint8_t flag) {
-    //free_config(config);
-    //read_config(config);
-    return 1;
+bool is_not_dirty(void *ctx) {
+    return !((MeteoConfig*)ctx)->dirty;
 }
 
-#define TOTAL_MENU_ITEMS 8 // TODO variable? sizeof...
-void config_screen(MeteoConfig *config) {
-    static MenuItem config_menu[] = {
-        {"Ethernet Slot              ", config_edit_ethernet_slot},
-        {"API Key                    ", config_edit_api_key},
-        {"Cities                     ", config_edit_cities},
-        {"Default Units              ", config_edit_default_units},
-        {"-"},
-        {"-"},
-        {"Save and exit configuration", config_do_quit},
-        {"Cancel                     ", config_do_cancel},
+//#define TOTAL_MENU_ITEMS 8 // TODO variable? sizeof...
+MeteoConfig* config_screen(MeteoConfig *config) {
+    // work on a copy for easy cancel
+    MeteoConfig *copy_config = clone_config(NULL, config);
+    static MenuItem menu_items[] = {
+        {"Ethernet Slot", config_edit_ethernet_slot},
+        {"API Key", config_edit_api_key},
+        {"Cities", config_edit_cities},
+        {"Default Units", config_edit_default_units},
+        {"-", NULL, NULL},
+        {"-", NULL, NULL},
+        {"Save and exit configuration", config_do_save_and_exit, is_dirty},
+        {"Cancel", config_do_cancel, is_dirty},
+        {"Exit configuration", previous_menu, is_not_dirty},
     };
-    uint8_t selected = 0;
-    char ch;
-    uint8_t exit = 0;
-
-    clrscr();
-    print_config_header();
-    while (!exit) {
-        //sprintf(config_menu[0].name, "Ethernet Slot: %d", config.ethernet_slot);
-        //sprintf(config_menu[1].name, "AppID: %s", config.api_key);
-        //sprintf(config_menu[2].name, "Cities (%d)", config.nb_cities);
-        draw_menu(4, selected, TOTAL_MENU_ITEMS, config_menu);
-        ch = cgetc();
-        //printf("%x ", ch);
-        switch (ch) {
-        case KeyLeftArrow:
-        case KeyUpArrow:
-            do {
-                selected = selected ? selected - 1 : TOTAL_MENU_ITEMS - 1;
-            } while(config_menu[selected].name[0] == '-');
-            break;
-        case KeyRightArrow:
-        case KeyDownArrow:
-        case '\t':
-            do {
-                selected = selected == TOTAL_MENU_ITEMS - 1 ? 0 : selected + 1;
-            } while(config_menu[selected].name[0] == '-');
-            break;
-        case ' ':
-        case '\r':
-            exit = config_menu[selected].action(config, NULL, 0);
-            clrscr();
-            print_config_header();
-            break;
-        }
+    Menu menu = {
+        "",
+        4,  // y
+        1, // interlines
+        0, // selected
+        DEFAULT_MENU_LEFT_PAD,
+        9, menu_items,
+        config_menu_init
+    };
+    if (do_menu(&menu, copy_config) == SAVE_CONFIG) {
+        free(config); // release old config
+        config = copy_config;
+        save_config(config);
+    } else {
+        free(copy_config);
     }
+    return config;
 }

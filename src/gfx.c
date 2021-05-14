@@ -105,7 +105,7 @@ void update_gfx_image(CityWeather *cw) {
 #define BITMAP_SIZE 800
 Bitmap load_bitmap(char *filename) {
     char path[10];
-    uint8_t *data = safe_malloc(BITMAP_SIZE, "Bitmap");
+    uint8_t *data = safe_malloc(BITMAP_SIZE);
     FILE *file;
     uint16_t i;
 
@@ -166,9 +166,9 @@ Bitmap get_bitmap_for_icon(char *icon) {
         }
     }
     if (bitmap_mappings == NULL) {
-        bitmap_mappings = safe_malloc(sizeof(BitmapMapping), "Array of BitmapMapping");
+        bitmap_mappings = safe_malloc(sizeof(BitmapMapping));
     } else {
-        bitmap_mappings = safe_realloc(bitmap_mappings, (bm_count+1)*sizeof(BitmapMapping), "Array of BitmapMapping");
+        bitmap_mappings = safe_realloc(bitmap_mappings, (bm_count+1)*sizeof(BitmapMapping));
     }
 
     bitmap = load_bitmap(filename);
