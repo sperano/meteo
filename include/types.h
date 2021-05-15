@@ -31,9 +31,10 @@ typedef uint8_t fahrenheit;
 //typedef uint8_t Bitmap[20][40];
 typedef uint8_t **Bitmap;
 
+#define CITY_ID_LEN 8
 typedef struct {
-    char id[9];
-    char *city_name;
+    char id[CITY_ID_LEN + 1];
+    char *name;
     char *weather;
     char *description;
     //union {
@@ -59,16 +60,20 @@ typedef struct {
     char *filename;
 } IconMapping;
 
+#define API_KEY_LEN 32
 typedef struct MeteoConfig {
     uint8_t ethernet_slot;
-    char api_key[33];
+    char api_key[API_KEY_LEN + 1];
     Units default_units;
     uint8_t nb_cities;
-    CityWeather *cities;
+    CityWeather **cities;
     bool dirty;
 } MeteoConfig;
 
-#define ESCAPE_TO_EXIT 1
+#define ESCAPE_TO_EXIT 1 // TODO better names
+#define ACCEPT_HEXA 2
+#define ACCEPT_NUMBER 4
+#define ACCEPT_SPACE 8
 typedef uint8_t (*MenuAction)(void *ctx, uint8_t idx, uint8_t flags);
 
 typedef bool (*MenuVisibilityCheck)(void *ctx);
@@ -88,7 +93,11 @@ typedef struct Menu {
     uint8_t left_pad;
     uint8_t total_items;
     MenuItem *items;
-    void (*init)(struct Menu *);
+    void (*init)(struct Menu *, void *ctx);
 } Menu;
 
+typedef struct {
+    MeteoConfig *config;
+    CityWeather *city;
+} Context;
 #endif

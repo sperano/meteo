@@ -16,7 +16,7 @@
 
 void print_city_weather(CityWeather *cw) {
     char buffer[5];
-    printf("%s: %s (%s)\n", cw->city_name, cw->weather, cw->description);
+    printf("%s: %s (%s)\n", cw->name, cw->weather, cw->description);
     //printf("ID: %s - Icon: %s\n", cw->id, cw->icon);
     celsius_str(buffer, cw->temperatureC);
     printf("Temperature: %sC / %dF\n", buffer, cw->temperatureF);
@@ -32,7 +32,7 @@ void handle_keyboard(MeteoConfig *config) {
     Units current_units = config->default_units;
     CityWeather *current_city;
     while (1) {
-        current_city = &config->cities[city_idx];
+        current_city = config->cities[city_idx];
         update_gfx_image(current_city);
         update_gfx_text(current_city, current_units);
         switch (cgetc()) {
@@ -106,7 +106,7 @@ MeteoConfig* init() {
                         if (state == OK) {
                             for (; i < config->nb_cities; ++i) {
                                 printf("\n");
-                                city = &config->cities[i];
+                                city = config->cities[i];
                                 download_weather_data(config->api_key, city); // TODO test failure
                                 print_city_weather(city);
                                 city->bitmap = get_bitmap_for_icon(city->icon);
@@ -157,11 +157,5 @@ int main(void) {
     exit_gfx();
     clrscr();
     free_config(config, true);
-    /*
-    free(cw->city_name);
-    free(cw->weather);
-    free(cw->description);
-    free(cw->icon);
-    */
     return 0;
 }

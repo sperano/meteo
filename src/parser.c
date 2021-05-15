@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -53,6 +54,7 @@ int8_t my_callback(j65_parser *p, uint8_t event) {
             break;
         case PARSER_GET_DESCRIPTION:
             cw->description = alloc_copy(j65_get_string(p));
+            cw->description[0] = toupper(cw->description[0]);
             current_state = PARSER_GET_ICON;
             break;
         case PARSER_GET_ICON:
@@ -60,7 +62,7 @@ int8_t my_callback(j65_parser *p, uint8_t event) {
             current_state = PARSER_GET_TEMP;
             break;
         case PARSER_GET_CITY_NAME:
-            cw->city_name = alloc_copy(utf8_to_ascii(j65_get_string(p)));
+            cw->name = alloc_copy(utf8_to_ascii(j65_get_string(p)));
             current_state = PARSER_END;
             break;
         }

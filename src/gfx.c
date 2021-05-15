@@ -51,7 +51,7 @@ void update_gfx_text(CityWeather *cw, Units units) {
     uint8_t i;
 
     // first line
-    strcpy(line1, cw->city_name);
+    strcpy(line1, cw->name);
     strcat(line1, ": ");
     if (units == Celsius) {
         celsius_str(line1 + strlen(line1), cw->temperatureC);

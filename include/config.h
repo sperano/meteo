@@ -28,6 +28,7 @@ MeteoState validate_config_cities(MeteoConfig *config);
 #define EXIT_CONFIG 3
 MeteoConfig* config_screen(MeteoConfig *config);
 
+uint8_t previous_menu(void *ctx, uint8_t idx, uint8_t flags);
 uint8_t config_edit_ethernet_slot(void *ctx, uint8_t idx, uint8_t flags);
 uint8_t config_edit_api_key(void *ctx, uint8_t idx, uint8_t flags);
 uint8_t config_edit_cities(void *ctx, uint8_t idx, uint8_t flags);

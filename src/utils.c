@@ -167,7 +167,7 @@ uint8_t do_menu(Menu *menu, void *ctx) {
     uint8_t i = 0;
 #ifndef NOCONSOLE
     if (menu->init) {
-        menu->init(menu);
+        menu->init(menu, ctx);
     }
     while (rc == 0) {
         draw_menu(menu, ctx);
@@ -191,11 +191,84 @@ uint8_t do_menu(Menu *menu, void *ctx) {
         case '\r':
             rc = menu->items[menu->selected].action(ctx, menu->selected, 0);
             if (menu->init) {
-                menu->init(menu);
+                menu->init(menu, ctx);
             }
             break;
         }
     }
 #endif
     return rc;
+}
+
+void text_input(uint8_t x, uint8_t y, uint8_t len, char *dest, char *src, uint8_t flags) {
+#ifndef NOCONSOLE
+    void *screen_ptr = (void*)(VideoBases[y]+x);
+    bool stop = false;
+    char ch;
+    char *work_copy = safe_malloc(len);
+    uint8_t pos = 0;
+
+    memcpy(work_copy, src, len);
+    for (ch = 0; ch < len; ++ch) {
+        if (work_copy[ch] == 0) {
+            work_copy[ch] = ' ';
+        } else if (work_copy[ch] >= 'A' && work_copy[ch] <= 'F') {
+            work_copy[ch] -= 0x40;
+        }
+    }
+    while (!stop) {
+        work_copy[pos] = work_copy[pos] += 0x80;
+        memcpy(screen_ptr, work_copy, len);
+        ch = cgetc();
+        if (((flags & ACCEPT_HEXA) || (flags & ACCEPT_NUMBER)) && ch >= '0' && ch <= '9') {
+            work_copy[pos] = ch;
+            pos = pos == len - 1 ? len - 1 : pos + 1;
+        } else if ((flags & ACCEPT_HEXA) && ((ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F'))) {
+            work_copy[pos] = toupper(ch) - 0x40;
+            pos = pos == len - 1 ? len - 1 : pos + 1;
+        } else {
+            switch (ch) {
+            case ' ':
+                work_copy[pos] -= 0x80;
+                if (flags & ACCEPT_SPACE) {
+                    work_copy[pos] = ' ';
+                }
+                pos = pos == len - 1 ? len - 1 : pos + 1;
+                break;
+            case '\r':
+                work_copy[pos] -= 0x80;
+                stop = true;
+                break;
+            case KeyLeftArrow:
+                work_copy[pos] -= 0x80;
+                if (pos) {
+                    pos--;
+                }
+                break;
+            case KeyRightArrow:
+                work_copy[pos] -= 0x80;
+                if (pos < len - 1) {
+                    pos++;
+                }
+                break;
+            case KeyEscape:
+                if (flags & ESCAPE_TO_EXIT) {
+                    exit(1);
+                }
+                break;
+            default:
+                work_copy[pos] -= 0x80;
+            }
+        }
+    }
+    for (ch = 0; ch < len; ++ch) {
+        dest[ch] = work_copy[ch];
+        if (dest[ch] >= ('A'-0x40) && dest[ch] <= ('F'-0x40)) {
+            dest[ch] += 0x40;
+        } else if (dest[ch] == ' ') {
+            dest[ch] = 0;
+        }
+    }
+    free(work_copy);
+#endif
 }
