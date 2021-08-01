@@ -236,6 +236,7 @@ void config_menu_init(Menu *menu, void *ctx) {
 }
 #pragma warn (unused-param, pop)
 
+// TODO document what is the purpose of init2 ???
 #pragma warn (unused-param, push, off)
 void config_menu_init2(Menu *menu, void *ctx) {
     Context *ctx_ = (Context*)ctx;
@@ -255,6 +256,7 @@ void config_menu_init2(Menu *menu, void *ctx) {
 }
 #pragma warn (unused-param, pop)
 
+// TODO document what is the purpose of init3 ??? BETTER NAME!
 #pragma warn (unused-param, push, off)
 void config_menu_init3(Menu *menu, void *ctx) {
 #ifndef NOCONSOLE
@@ -274,15 +276,14 @@ uint8_t config_edit_ethernet_slot(void *ctx, uint8_t idx, uint8_t flags) {
     char ch;
     uint8_t current_value = ((MeteoConfig*)ctx)->ethernet_slot;
     uint8_t orig_value = current_value;
-    void *ptr = (void*)(VideoBases[7]+16);
+    void *ptr = (void*)(VideoBases[7]+18);
     char data[1];
 
     clrscr();
     print_config_header();
-    printf("\nThe ethernet card is usually\ninstalled in slot #%d.\n\n\n"
-           "Ethernet Slot: #\n\n"
-           "Enter a number between 1 and 7\nor use the arrow keys.\n\n"
-           "\n\n\n\n\n\n\n\n\n\n", ETH_INIT_DEFAULT);
+    printf("\n  The ethernet card is usually\n  installed in slot #%d.\n\n\n"
+           "  Ethernet Slot: #\n\n\n\n\n\n\n\n\n\n\n\n"
+           "Enter a number between 1 and 7\nor use the arrow keys.\n\n", ETH_INIT_DEFAULT);
     if (flags & ESCAPE_TO_EXIT) {
         printf("Press [Return] to continue.\nPress [Esc] to exit.");
     } else {
@@ -317,6 +318,7 @@ uint8_t config_edit_ethernet_slot(void *ctx, uint8_t idx, uint8_t flags) {
     ((MeteoConfig*)ctx)->ethernet_slot = current_value;
     ((MeteoConfig*)ctx)->dirty = orig_value != current_value;
 #endif
+    //config_menu_init(NULL, ctx);
     return 0;
 }
 #pragma warn (unused-param, pop)
@@ -333,20 +335,21 @@ uint8_t config_edit_api_key(void *ctx, uint8_t idx, uint8_t flags) {
     strcpy(dest, cfg->api_key);
     clrscr();
     print_config_header();
-    printf("\nGenerate an API Key at:\nhttps://openweathermap.org\n\n"
-           "The API Key is a 32 characters long\nhexadecimal string.\n\n\n\n"
-           "    API Key:\n\n\n\n\n\n\n\n\n");
+    printf("\n  Generate an API Key at:\n  https://openweathermap.org\n\n"
+           "  The API Key is a 32 characters long\n  hexadecimal string.\n\n\n\n"
+           "  API Key:\n\n\n\n\n\n\n\n\n");
     if (flags & ESCAPE_TO_EXIT) {
         printf("Use Arrow keys to move cursor.\n\nPress [Return] to continue.\nPress [Esc] to exit.");
     } else {
         printf("\nUse Arrow keys to move cursor.\n\nPress [Return] to continue.");
     }
-    text_input(4, 13, API_KEY_LEN, dest, cfg->api_key, ACCEPT_HEXA);
+    text_input(2, 13, API_KEY_LEN, dest, cfg->api_key, ACCEPT_HEXA);
     if (strcmp(dest, cfg->api_key)) {
         strcpy(cfg->api_key, dest);
         cfg->dirty = true;
     }
 #endif
+    //config_menu_init(NULL, ctx);
     return 0;
 }
 #pragma warn (unused-param, pop)
@@ -360,21 +363,22 @@ uint8_t config_edit_cities(void *ctx, uint8_t idx, uint8_t flags) {
     uint8_t nb_cities = 0;
     uint8_t i = 0;
     MenuItem *menu_items;
+    bool stop = false;
     Menu menu = {
         "",
         4,  // y
-        1, // interlines
+        0, // interlines
         0, // selected
         DEFAULT_MENU_LEFT_PAD,
         0, // total_items
         NULL,
         config_menu_init
     };
-    while (true) {
+    while (!stop) {
         nb_cities = config->nb_cities;
-        menu_items = safe_malloc((nb_cities + 3) * sizeof(MenuItem));
+        menu_items = safe_malloc((nb_cities + 4) * sizeof(MenuItem));
         menu.items = menu_items;
-        menu.total_items = nb_cities + 3;
+        menu.total_items = nb_cities + 4;
         for(i = 0; i < nb_cities; ++i) {
             menu_items[i].name = config->cities[i]->name;
             menu_items[i].action = config_edit_city;
@@ -383,17 +387,24 @@ uint8_t config_edit_cities(void *ctx, uint8_t idx, uint8_t flags) {
         menu_items[nb_cities].name = "-";
         menu_items[nb_cities].visibility_check = NULL;
         menu_items[nb_cities + 1].name = "Add a city";
+        menu_items[nb_cities + 1].action = config_add_city;
         menu_items[nb_cities + 1].visibility_check = NULL;
-        menu_items[nb_cities + 2].name = "Previous menu";
-        menu_items[nb_cities + 2].action = previous_menu;
+
+        menu_items[nb_cities + 2].name = "-";
+        menu_items[nb_cities + 2].action = NULL;
         menu_items[nb_cities + 2].visibility_check = NULL;
+        menu_items[nb_cities + 3].name = "Previous menu";
+        menu_items[nb_cities + 3].action = previous_menu;
+        menu_items[nb_cities + 3].visibility_check = NULL;
         if (do_menu(&menu, ctx) == EXIT_CONFIG) {
-            break;
+            stop = true;
         };
         free(menu_items);
     }
+    //config_menu_init(NULL, ctx);
     return 0;
 }
+
 #pragma warn (unused-param, pop)
 
 #pragma warn (unused-param, push, off)
@@ -458,7 +469,7 @@ uint8_t config_delete_city(void *ctx, uint8_t idx, uint8_t flags) {
     Menu menu = {
         "",
         8,  // y
-        1, // interlines
+        0, // interlines
         1, // selected
         DEFAULT_MENU_LEFT_PAD,
         2, // total_items
@@ -513,15 +524,16 @@ uint8_t config_edit_city(void *ctx, uint8_t idx, uint8_t flags) {
         {"Edit ID", config_edit_city_id, NULL},
         {"Delete city", config_delete_city, can_delete_city},
         {"Fetch data", config_fetch_data, NULL},
+        {"-", NULL, NULL},
         {"Previous Menu", previous_menu, NULL},
     };
     Menu menu = {
         "",
         12, // y
-        1, // interlines
+        0, // interlines
         0, // selected
         DEFAULT_MENU_LEFT_PAD,
-        4, // total_items
+        5, // total_items
         menu_items,
         config_menu_init2,
     };
@@ -530,6 +542,38 @@ uint8_t config_edit_city(void *ctx, uint8_t idx, uint8_t flags) {
     uint8_t rc;
     new_ctx.config = config;
     new_ctx.city = config->cities[idx];
+    rc = do_menu(&menu, &new_ctx);
+    if (rc == EXIT_CONFIG) {
+        return 0;
+    }
+    return rc;
+}
+#pragma warn (unused-param, pop)
+
+#pragma warn (unused-param, push, off)
+uint8_t config_add_city(void *ctx, uint8_t idx, uint8_t flags) {
+    static MenuItem menu_items[] = {
+        {"Edit ID", config_edit_city_id, NULL},
+        {"Delete city", config_delete_city, can_delete_city},
+        {"Fetch data", config_fetch_data, NULL},
+        {"-", NULL, NULL},
+        {"Previous Menu", previous_menu, NULL},
+    };
+    Menu menu = {
+        "",
+        12, // y
+        0, // interlines
+        0, // selected
+        DEFAULT_MENU_LEFT_PAD,
+        5, // total_items
+        menu_items,
+        config_menu_init2,
+    };
+    MeteoConfig *config = (MeteoConfig*)ctx;
+    Context new_ctx = {};
+    uint8_t rc;
+    new_ctx.config = config;
+    //new_ctx.city = config->cities[idx];
     rc = do_menu(&menu, &new_ctx);
     if (rc == EXIT_CONFIG) {
         return 0;
@@ -569,7 +613,7 @@ uint8_t config_edit_default_units(void *ctx, uint8_t idx, uint8_t flags) {
     Menu menu = {
         "",
         4,  // y
-        1, // interlines
+        0, // interlines
         0, // selected
         DEFAULT_MENU_LEFT_PAD,
         2, // total_items
@@ -625,7 +669,7 @@ MeteoConfig* config_screen(MeteoConfig *config) {
     Menu menu = {
         "",
         4,  // y
-        1, // interlines
+        0, // interlines
         0, // selected
         DEFAULT_MENU_LEFT_PAD,
         8, menu_items,

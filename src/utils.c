@@ -103,7 +103,7 @@ void* safe_realloc(void *ptr, size_t size) {
 const char *utf8_to_ascii(const char *str) {
     char *str1 = (char *)str;
     char *str2 = (char *)str;
-    while(*str2) {
+    while (*str2) {
         switch(*str2) {
         case 0xc3:
             str2++;
@@ -176,7 +176,7 @@ uint8_t do_menu(Menu *menu, void *ctx) {
         case KeyUpArrow:
             do {
                 menu->selected = menu->selected ? menu->selected - 1 : menu->total_items - 1;
-            } while(menu->items[menu->selected].name[0] == '-' ||
+            } while (menu->items[menu->selected].name[0] == '-' ||
                     (menu->items[menu->selected].visibility_check != NULL && !menu->items[menu->selected].visibility_check(ctx)));
             break;
         case KeyRightArrow:
@@ -184,13 +184,13 @@ uint8_t do_menu(Menu *menu, void *ctx) {
         case '\t':
             do {
                 menu->selected = menu->selected - (menu->total_items - 1) ? menu->selected + 1 : 0;
-            } while(menu->items[menu->selected].name[0] == '-' ||
+            } while (menu->items[menu->selected].name[0] == '-' ||
                     (menu->items[menu->selected].visibility_check != NULL && !menu->items[menu->selected].visibility_check(ctx)));
             break;
         case ' ':
         case '\r':
             rc = menu->items[menu->selected].action(ctx, menu->selected, 0);
-            if (menu->init) {
+            if (rc == 0 && menu->init) {
                 menu->init(menu, ctx);
             }
             break;

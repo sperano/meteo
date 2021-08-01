@@ -23,9 +23,6 @@ MeteoState validate_config_cities(MeteoConfig *config);
 
 //void ensure_config(MeteoConfig *config);
 
-#define SAVE_CONFIG 1
-#define CANCEL_CONFIG 2
-#define EXIT_CONFIG 3
 MeteoConfig* config_screen(MeteoConfig *config);
 
 uint8_t previous_menu(void *ctx, uint8_t idx, uint8_t flags);
@@ -33,5 +30,6 @@ uint8_t config_edit_ethernet_slot(void *ctx, uint8_t idx, uint8_t flags);
 uint8_t config_edit_api_key(void *ctx, uint8_t idx, uint8_t flags);
 uint8_t config_edit_cities(void *ctx, uint8_t idx, uint8_t flags);
 uint8_t config_edit_city(void *ctx, uint8_t idx, uint8_t flags);
+uint8_t config_add_city(void *ctx, uint8_t idx, uint8_t flags);
 
 #endif

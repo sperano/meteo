@@ -34,4 +34,9 @@ void text_input(uint8_t x, uint8_t y, uint8_t len, char *dest, char *src, uint8_
 #define KeyUpArrow 0x0b
 #define KeyDownArrow 0x0a
 #define KeyEscape 0x1b
+
+#define SAVE_CONFIG 1
+#define CANCEL_CONFIG 2
+#define EXIT_CONFIG 3
+
 #endif
