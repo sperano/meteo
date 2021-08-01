@@ -30,7 +30,7 @@ void init_net(void) {
 }
 */
 
-void download_weather_data(char *api_key, CityWeather *cw) {
+bool download_weather_data(char *api_key, CityWeather *cw) {
     //static char url[128]; // must be 1460 bytes
     char *url = safe_malloc(1460);
     char *buffer = safe_malloc(SCRATCH_SIZE);
@@ -53,4 +53,5 @@ void download_weather_data(char *api_key, CityWeather *cw) {
     }
     parse_api_response(cw, ptr, len-(ptr-buffer));
     free(buffer);
+    return true;
 }

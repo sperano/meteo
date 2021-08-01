@@ -8,9 +8,12 @@
 #include "ip65.h"
 #include "config.h"
 #include "gfx.h"
+#include "net.h"
 #include "utils.h"
 
 #pragma static-locals(on)
+
+// TODO limit to add city?
 
 /*
 
@@ -284,7 +287,7 @@ uint8_t config_edit_ethernet_slot(void *ctx, uint8_t idx, uint8_t flags) {
     printf("\n  The ethernet card is usually\n  installed in slot #%d.\n\n\n"
            "  Ethernet Slot: #\n\n\n\n\n\n\n\n\n\n\n\n"
            "Enter a number between 1 and 7\nor use the arrow keys.\n\n", ETH_INIT_DEFAULT);
-    if (flags & ESCAPE_TO_EXIT) {
+    if (flags & ACCEPT_ESCAPE) {
         printf("Press [Return] to continue.\nPress [Esc] to exit.");
     } else {
         printf("\nPress [Return] to continue.");
@@ -308,7 +311,7 @@ uint8_t config_edit_ethernet_slot(void *ctx, uint8_t idx, uint8_t flags) {
                 current_value = current_value == 7 ? 1 : current_value + 1;
                 break;
             case KeyEscape:
-                if (flags & ESCAPE_TO_EXIT) {
+                if (flags & ACCEPT_ESCAPE) {
                     exit(1);
                 }
                 break;
@@ -338,12 +341,14 @@ uint8_t config_edit_api_key(void *ctx, uint8_t idx, uint8_t flags) {
     printf("\n  Generate an API Key at:\n  https://openweathermap.org\n\n"
            "  The API Key is a 32 characters long\n  hexadecimal string.\n\n\n\n"
            "  API Key:\n\n\n\n\n\n\n\n\n");
-    if (flags & ESCAPE_TO_EXIT) {
+    if (flags & ACCEPT_ESCAPE) {
         printf("Use Arrow keys to move cursor.\n\nPress [Return] to continue.\nPress [Esc] to exit.");
     } else {
         printf("\nUse Arrow keys to move cursor.\n\nPress [Return] to continue.");
     }
-    text_input(2, 13, API_KEY_LEN, dest, cfg->api_key, ACCEPT_HEXA);
+    if (text_input(2, 13, API_KEY_LEN, dest, cfg->api_key, ACCEPT_HEXA | ACCEPT_ESCAPE) == -1) {
+        exit(1);
+    }
     if (strcmp(dest, cfg->api_key)) {
         strcpy(cfg->api_key, dest);
         cfg->dirty = true;
@@ -416,12 +421,14 @@ uint8_t config_edit_city_id(void *ctx, uint8_t idx, uint8_t flags) {
     clrscr();
     print_config_header();
     printf("\n  City: %s\n\n  Edit the City ID:\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n", ctx_->city->name);
-    if (flags & ESCAPE_TO_EXIT) {
+    if (flags & ACCEPT_ESCAPE) {
         printf("Use Arrow keys to move cursor.\n\nPress [Return] to continue.\nPress [Esc] to exit.");
     } else {
         printf("\nUse Arrow keys to move cursor.\n\nPress [Return] to continue.");
     }
-    text_input(21, 5, CITY_ID_LEN, dest, ctx_->city->id, ACCEPT_NUMBER | ACCEPT_SPACE);
+    if (text_input(21, 5, CITY_ID_LEN, dest, ctx_->city->id, ACCEPT_NUMBER | ACCEPT_SPACE | ACCEPT_ESCAPE) == -1) {
+        exit(1);
+    };
     clrscr();
     print_config_header();
     if (strcmp(dest, ctx_->city->id)) {
@@ -552,33 +559,44 @@ uint8_t config_edit_city(void *ctx, uint8_t idx, uint8_t flags) {
 
 #pragma warn (unused-param, push, off)
 uint8_t config_add_city(void *ctx, uint8_t idx, uint8_t flags) {
-    static MenuItem menu_items[] = {
-        {"Edit ID", config_edit_city_id, NULL},
-        {"Delete city", config_delete_city, can_delete_city},
-        {"Fetch data", config_fetch_data, NULL},
-        {"-", NULL, NULL},
-        {"Previous Menu", previous_menu, NULL},
-    };
-    Menu menu = {
-        "",
-        12, // y
-        0, // interlines
-        0, // selected
-        DEFAULT_MENU_LEFT_PAD,
-        5, // total_items
-        menu_items,
-        config_menu_init2,
-    };
     MeteoConfig *config = (MeteoConfig*)ctx;
-    Context new_ctx = {};
-    uint8_t rc;
-    new_ctx.config = config;
-    //new_ctx.city = config->cities[idx];
-    rc = do_menu(&menu, &new_ctx);
-    if (rc == EXIT_CONFIG) {
+    char dest[CITY_ID_LEN + 1];
+    CityWeather *city;
+
+    memset(dest, ' ', CITY_ID_LEN);
+    dest[CITY_ID_LEN] = 0;
+
+    clrscr();
+    print_config_header();
+    printf("\n  New City ID:\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
+    printf("\nUse Arrow keys to move cursor.\n\nPress [Return] to continue.\n\nPress [Esc] to cancel.");
+    if (text_input(17, 3, CITY_ID_LEN, dest, dest, ACCEPT_NUMBER | ACCEPT_SPACE | ACCEPT_ESCAPE) == -1) {
         return 0;
+    };
+
+    city = safe_malloc(sizeof(CityWeather));
+    strcpy(city->id, dest);
+    if (!download_weather_data(config->api_key, city)) {
+        free(city);
+        clrscr();
+        print_config_header();
+        printf("\n  New City ID:   %s\n", dest);
+        printf("\n\nFailed to download weather data.\n\nPress any key to continue.\n");
+        cgetc();
+        return 0; // TODO unclear what it does
     }
-    return rc;
+    city->bitmap = get_bitmap_for_icon(city->icon);
+
+    config->nb_cities++;
+    config->cities = safe_realloc(config->cities, config->nb_cities * sizeof(CityWeather*));
+    config->cities[config->nb_cities - 1] = city;
+    config->dirty = true;
+    //clrscr();
+    //printf("nb_cities: %d\n", config->nb_cities);
+    //cgetc();
+    clrscr();
+    print_config_header();
+    return 0;
 }
 #pragma warn (unused-param, pop)
 

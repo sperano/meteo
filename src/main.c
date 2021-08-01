@@ -132,7 +132,7 @@ MeteoConfig* init() {
                 //clrscr();
             }
         } else {
-            config_edit_ethernet_slot(config, 0, ESCAPE_TO_EXIT);
+            config_edit_ethernet_slot(config, 0, ACCEPT_ESCAPE);
             clrscr();
         }
     } while (state != OK);

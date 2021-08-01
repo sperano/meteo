@@ -9,6 +9,6 @@
 MeteoState init_ethernet(MeteoConfig *config);
 MeteoState init_dhcp(MeteoConfig *config);
 void get_ip_addr(char *buffer);
-void download_weather_data(char *api_key, CityWeather *city_weather);
+bool download_weather_data(char *api_key, CityWeather *city_weather);
 
 #endif

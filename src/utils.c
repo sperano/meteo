@@ -200,7 +200,7 @@ uint8_t do_menu(Menu *menu, void *ctx) {
     return rc;
 }
 
-void text_input(uint8_t x, uint8_t y, uint8_t len, char *dest, char *src, uint8_t flags) {
+int8_t text_input(uint8_t x, uint8_t y, uint8_t len, char *dest, char *src, uint8_t flags) {
 #ifndef NOCONSOLE
     void *screen_ptr = (void*)(VideoBases[y]+x);
     bool stop = false;
@@ -252,8 +252,11 @@ void text_input(uint8_t x, uint8_t y, uint8_t len, char *dest, char *src, uint8_
                 }
                 break;
             case KeyEscape:
-                if (flags & ESCAPE_TO_EXIT) {
-                    exit(1);
+                //if (flags & ESCAPE_TO_EXIT) {
+                //    exit(1);
+                //}
+                if (flags & ACCEPT_ESCAPE) {
+                    return -1;
                 }
                 break;
             default:

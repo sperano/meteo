@@ -25,7 +25,7 @@ const char* utf8_to_ascii(const char *);
 
 uint8_t do_menu(Menu *menu, void *ctx);
 
-void text_input(uint8_t x, uint8_t y, uint8_t len, char *dest, char *src, uint8_t flags);
+int8_t text_input(uint8_t x, uint8_t y, uint8_t len, char *dest, char *src, uint8_t flags);
 
 //#define print_line() printf("---------------------------------------\n")
 

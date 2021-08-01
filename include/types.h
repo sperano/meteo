@@ -70,7 +70,7 @@ typedef struct MeteoConfig {
     bool dirty;
 } MeteoConfig;
 
-#define ESCAPE_TO_EXIT 1 // TODO better names
+#define ACCEPT_ESCAPE 1
 #define ACCEPT_HEXA 2
 #define ACCEPT_NUMBER 4
 #define ACCEPT_SPACE 8
