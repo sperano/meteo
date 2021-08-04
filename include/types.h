@@ -82,8 +82,11 @@ typedef enum  {
     CityAdded,
     UnitConfigured,
     CityAddFailed,
+    CityAddCancelled,
     PreviousMenu,
     PreviousMenuCity,
+    DataFetched,
+    FetchDataFailed,
 } ActionResult;
 
 #define ACCEPT_ESCAPE 1

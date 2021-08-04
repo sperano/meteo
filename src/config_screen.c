@@ -298,30 +298,16 @@ ActionResult config_delete_city(void *ctx, uint8_t idx, uint8_t flags) {
 #pragma warn (unused-param, push, off)
 ActionResult config_fetch_data(void *ctx, uint8_t idx, uint8_t flags) {
 #ifndef NOCONSOLE
-/*
     Context *ctx_ = (Context*)ctx;
-    char dest[CITY_ID_LEN + 1];
-    strcpy(dest, ctx_->city->id);
-    clrscr();
-    print_config_header();
-    printf("\n  City: %s\n\n  Edit the City ID:\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n", ctx_->city->city_name);
-    if (flags & ESCAPE_TO_EXIT) {
-        printf("Use Arrow keys to move cursor.\n\nPress [Return] to continue.\nPress [Esc] to exit.");
-    } else {
-        printf("\nUse Arrow keys to move cursor.\n\nPress [Return] to continue.");
+    MeteoConfig *cfg = ctx_->config;
+    CityWeather *city = ctx_->city;
+    if (!download_weather_data(cfg->api_key, city)) {
+        return FetchDataFailed;
     }
-    text_input(21, 5, CITY_ID_LEN, dest, ctx_->city->id, ACCEPT_NUMBER | ACCEPT_SPACE);
-    clrscr();
-    print_config_header();
-    if (strcmp(dest, ctx_->city->id)) {
-        memcpy(ctx_->city->id, dest, CITY_ID_LEN);
-        ctx_->city->id[CITY_ID_LEN] = 0;
-        //strcpy(ctx_->city->id, dest);
-        ctx_->config->dirty = true;
-    }
-    */
+    city->bitmap = get_bitmap_for_icon(city->icon);
+    cfg->dirty = true;
 #endif
-    return 0;
+    return DataFetched;
 }
 #pragma warn (unused-param, pop)
 
@@ -374,8 +360,9 @@ ActionResult config_add_city(void *ctx, uint8_t idx, uint8_t flags) {
     print_config_header();
     printf("\n  New City ID:\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
     printf("\nUse Arrow keys to move cursor.\n\nPress [Return] to continue.\n\nPress [Esc] to cancel.");
+    // TODO constants pour -1: and 17
     if (text_input(17, 3, CITY_ID_LEN, dest, dest, ACCEPT_NUMBER | ACCEPT_SPACE | ACCEPT_ESCAPE) == -1) {
-        return 0;
+        return CityAddCancelled;
     };
 
     city = safe_malloc(sizeof(CityWeather));
@@ -395,9 +382,6 @@ ActionResult config_add_city(void *ctx, uint8_t idx, uint8_t flags) {
     config->cities = safe_realloc(config->cities, config->nb_cities * sizeof(CityWeather*));
     config->cities[config->nb_cities - 1] = city;
     config->dirty = true;
-    //clrscr();
-    //printf("nb_cities: %d\n", config->nb_cities);
-    //cgetc();
     clrscr();
     print_config_header();
     return CityAdded;
