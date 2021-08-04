@@ -93,27 +93,18 @@ typedef enum  {
 #define ACCEPT_HEXA 2
 #define ACCEPT_NUMBER 4
 #define ACCEPT_SPACE 8
+
 typedef ActionResult (*MenuAction)(void *ctx, uint8_t idx, uint8_t flags);
 
 typedef bool (*MenuVisibilityCheck)(void *ctx);
+
+typedef void (*MenuInit)(void *ctx);
 
 typedef struct {
     char *name;
     MenuAction action;
     MenuVisibilityCheck visibility_check;
 } MenuItem;
-
-typedef struct Menu {
-    char *message;
-    uint8_t y_pos;
-    uint8_t interlines;
-    uint8_t selected;
-    //uint8_t item_width;
-    uint8_t left_pad;
-    uint8_t total_items;
-    MenuItem *items;
-    void (*init)(struct Menu *, void *ctx);
-} Menu;
 
 typedef struct {
     MeteoConfig *config;

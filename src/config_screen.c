@@ -9,12 +9,14 @@
 #include "config_screen.h"
 #include "gfx.h"
 #include "net.h"
+#include "ui.h"
 #include "utils.h"
 
 #pragma static-locals(on)
 
 // TODO limit to add city?
 // TODO at least 1 city?
+// TODO ESC supported everywhere
 
 #define print_config_header() printf("Meteo %s - Configuration\n----------------------------------------", METEO_VERSION)
 
@@ -22,7 +24,7 @@
  * Just clear the screen and display the header
  */
 #pragma warn (unused-param, push, off)
-void _menu_init_standard(Menu *menu, void *ctx) {
+void _menu_init_standard(void *ctx) {
 #ifndef NOCONSOLE
     clrscr();
 #endif
@@ -33,8 +35,7 @@ void _menu_init_standard(Menu *menu, void *ctx) {
 /**
  * Clear the screen, display header and city data from context
  */
-#pragma warn (unused-param, push, off)
-void _menu_init_city(Menu *menu, void *ctx) {
+void _menu_init_city(void *ctx) {
     Context *ctx_ = (Context*)ctx;
     CityWeather *cw = ctx_->city;
     char buffer[16];
@@ -50,21 +51,17 @@ void _menu_init_city(Menu *menu, void *ctx) {
     celsius_str(buffer, cw->maximumC);
     printf("  Maximum:     %4sC    %dF\n", buffer, cw->maximumF);
 }
-#pragma warn (unused-param, pop)
 
-// TODO document what is the purpose of init3 ??? BETTER NAME!
 /**
  * Clear the screen, display header and confirm delete
  */
-#pragma warn (unused-param, push, off)
-void _menu_init_confirm_delete(Menu *menu, void *ctx) {
+void _menu_init_confirm_delete(void *ctx) {
 #ifndef NOCONSOLE
     clrscr();
 #endif
     print_config_header();
     printf("\n  Are you sure you want to delete\n  %s ?", ((Context*)ctx)->city->name);
 }
-#pragma warn (unused-param, pop)
 
 /**
  *
@@ -166,22 +163,11 @@ ActionResult config_edit_cities(void *ctx, uint8_t idx, uint8_t flags) {
     MeteoConfig *config = (MeteoConfig*)ctx;
     uint8_t nb_cities = 0;
     uint8_t i = 0;
+    uint8_t selected = 0;
     MenuItem *menu_items;
-    Menu menu = {
-        "",
-        4,  // y
-        0, // interlines
-        0, // selected
-        DEFAULT_MENU_LEFT_PAD,
-        0, // total_items
-        NULL,
-        _menu_init_standard
-    };
     do {
         nb_cities = config->nb_cities;
         menu_items = safe_malloc((nb_cities + 4) * sizeof(MenuItem));
-        menu.items = menu_items;
-        menu.total_items = nb_cities + 4;
         for(i = 0; i < nb_cities; ++i) {
             menu_items[i].name = config->cities[i]->name;
             menu_items[i].action = config_edit_city;
@@ -199,14 +185,14 @@ ActionResult config_edit_cities(void *ctx, uint8_t idx, uint8_t flags) {
         menu_items[nb_cities + 3].name = "Previous menu";
         menu_items[nb_cities + 3].action = previous_menu;
         menu_items[nb_cities + 3].visibility_check = NULL;
-        ar = do_menu(&menu, ctx);
+        ar = do_menu(4, &selected, menu_items, nb_cities + 4, _menu_init_standard, ctx);
         switch(ar) {
         case CityAdded:
-            menu.selected = config->nb_cities - 1;
+            selected = config->nb_cities - 1;
             break;
         case CityDeleted:
-            if (menu.selected > 0) {
-                menu.selected--;
+            if (selected > 0) {
+                selected--;
             }
         }
         free(menu_items);
@@ -266,7 +252,7 @@ ActionResult config_delete_city_confirmed(void *ctx, uint8_t idx, uint8_t flags)
     config->cities = new_cities;
     config->nb_cities--;
     config->dirty = true;
-    return CityDeleted; // TODO constant
+    return CityDeleted;
 }
 
 #pragma warn (unused-param, pop)
@@ -278,17 +264,8 @@ ActionResult config_delete_city(void *ctx, uint8_t idx, uint8_t flags) {
         {"Yes", config_delete_city_confirmed, NULL},
         {"No", previous_menu, NULL},
     };
-    Menu menu = {
-        "",
-        8,  // y
-        0, // interlines
-        1, // selected
-        DEFAULT_MENU_LEFT_PAD,
-        2, // total_items
-        menu_items,
-        _menu_init_confirm_delete
-    };
-    return do_menu(&menu, ctx);
+    uint8_t selected;
+    return do_menu(8, &selected, menu_items, 2, _menu_init_confirm_delete, ctx);
 #else
     return PreviousMenu;
 #endif
@@ -324,23 +301,14 @@ ActionResult config_edit_city(void *ctx, uint8_t idx, uint8_t flags) {
         {"-", NULL, NULL},
         {"Previous Menu", previous_menu_city, NULL},
     };
-    Menu menu = {
-        "",
-        12, // y
-        0, // interlines
-        0, // selected
-        DEFAULT_MENU_LEFT_PAD,
-        5, // total_items
-        menu_items,
-        _menu_init_city
-    };
     MeteoConfig *config = (MeteoConfig*)ctx;
     ActionResult ar = 0;
+    uint8_t selected = 0;
     Context new_ctx = {};
     new_ctx.config = config;
     new_ctx.city = config->cities[idx];
     do {
-        ar = do_menu(&menu, &new_ctx);
+        ar = do_menu(12, &selected, menu_items, 5, _menu_init_city, &new_ctx);
     }
     while(ar != CityDeleted && ar != PreviousMenuCity);
     return ar;
@@ -416,18 +384,8 @@ ActionResult config_edit_default_units(void *ctx, uint8_t idx, uint8_t flags) {
         {"Celcius", config_set_celcius},
         {"Fahrenheit", config_set_fahrenheit},
     };
-    Menu menu = {
-        "",
-        4,  // y
-        0, // interlines
-        0, // selected
-        DEFAULT_MENU_LEFT_PAD,
-        2, // total_items
-        menu_items,
-        _menu_init_standard
-    };
-    menu.selected = ((MeteoConfig*)ctx)->default_units == Fahrenheit;
-    return do_menu(&menu, ctx);
+    uint8_t selected = ((MeteoConfig*)ctx)->default_units == Fahrenheit;
+    return do_menu(4, &selected, menu_items, 2, _menu_init_standard, ctx);
 }
 #pragma warn (unused-param, pop)
 
@@ -483,18 +441,10 @@ MeteoConfig* config_screen(MeteoConfig *config) {
         {"Cancel", cancel_config_screen, is_dirty},
         {"Exit configuration", exit_config_screen, is_not_dirty},
     };
-    Menu menu = {
-        "",
-        4,  // y
-        0, // interlines
-        0, // selected
-        DEFAULT_MENU_LEFT_PAD,
-        8, menu_items,
-        _menu_init_standard
-    };
     bool stop = false;
+    uint8_t selected;
     while (!stop) {
-        switch(do_menu(&menu, copy_config)) {
+        switch(do_menu(4, &selected, menu_items, 8, _menu_init_standard, copy_config)) {
         case SaveAndExitConfig:
             free(config); // release old config
             config = copy_config;

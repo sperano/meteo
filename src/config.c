@@ -13,8 +13,6 @@
 
 #pragma static-locals(on)
 
-// TODO limit to add city?
-
 /*
 
 Config file structure:
