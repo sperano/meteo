@@ -14,7 +14,7 @@ MeteoConfig* clone_config(MeteoConfig *dest, MeteoConfig *src);
 void free_config(MeteoConfig *config, bool free_ptr);
 void print_config(MeteoConfig *config);
 
-MeteoState read_config(MeteoConfig *config);
+MeteoState load_config(MeteoConfig *config);
 void save_config(MeteoConfig *config);
 
 MeteoState validate_config_ethernet(MeteoConfig *config);

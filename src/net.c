@@ -19,21 +19,10 @@ void get_ip_addr(char *buffer) {
     snprintf(buffer, IP_ADDR_STR_LENGTH, "%d.%d.%d.%d\n", ip_bytes[0], ip_bytes[1], ip_bytes[2], ip_bytes[3]);
 }
 
-/*
-void init_net(void) {
-    unsigned char *ip_bytes = (unsigned char *)&cfg_ip;
-    printf("Obtaining IP address...\n");
-    if (dhcp_init()) {
-        fail("Error initializing DHCP\n");
-    }
-    printf("IP: %d.%d.%d.%d\n", ip_bytes[0], ip_bytes[1], ip_bytes[2], ip_bytes[3]);
-}
-*/
-
 bool download_weather_data(char *api_key, CityWeather *cw) {
     //static char url[128]; // must be 1460 bytes
     char *url = safe_malloc(1460);
-    char *buffer = safe_malloc(SCRATCH_SIZE);
+    char *buffer = safe_malloc(BUFFER_SIZE);
     uint16_t len = 0;
     char *ptr = url;
 
@@ -43,13 +32,13 @@ bool download_weather_data(char *api_key, CityWeather *cw) {
         ++ptr;
     }
     printf("Downloading weather for %s\n", cw->id);
-    len = url_download(url, buffer, SCRATCH_SIZE);
+    len = url_download(url, buffer, BUFFER_SIZE);
     free(url);
     printf("Downloaded %d bytes.\n", len);
     ptr = buffer;
     // go to beginning of json
     while (*ptr && *ptr != '{') {
-        ++ptr; // TODO assert that we found one {}
+        ++ptr; // TODO assert that we found one {
     }
     parse_api_response(cw, ptr, len-(ptr-buffer));
     free(buffer);

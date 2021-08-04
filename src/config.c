@@ -150,8 +150,7 @@ void save_config(MeteoConfig *config) {
     config->dirty = 0;
 }
 
-// TODO rename to load_config ???
-MeteoState read_config(MeteoConfig *config) {
+MeteoState load_config(MeteoConfig *config) {
     uint8_t i, j;
     FILE *file;
     CityWeather *cw;

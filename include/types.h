@@ -75,9 +75,11 @@ typedef enum  {
     SaveAndExitConfig,
     CancelAndExitConfig,
     EthernetSlotConfigured,
-    CancelEthernetSlot,
+    EditEthernetSlotCancelled,
     APIKeyConfigured,
+    EditAPIKeyCancelled,
     CityIDConfigured,
+    EditCityIDCancelled,
     CityDeleted,
     CityAdded,
     UnitConfigured,
@@ -94,7 +96,7 @@ typedef enum  {
 #define ACCEPT_NUMBER 4
 #define ACCEPT_SPACE 8
 
-typedef ActionResult (*MenuAction)(void *ctx, uint8_t idx, uint8_t flags);
+typedef ActionResult (*MenuAction)(void *ctx, uint8_t idx);
 
 typedef bool (*MenuVisibilityCheck)(void *ctx);
 

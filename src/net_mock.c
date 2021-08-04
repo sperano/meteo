@@ -19,7 +19,7 @@ void get_ip_addr(char *buffer) {
 }
 
 bool download_weather_data(char *, CityWeather *cw) {
-    static char buffer[SCRATCH_SIZE];
+    static char buffer[BUFFER_SIZE];
     uint16_t len = 0;
     char filename[15];
     FILE *f;
@@ -37,7 +37,7 @@ bool download_weather_data(char *, CityWeather *cw) {
             break;
         }
         len++;
-        if (len == SCRATCH_SIZE) {
+        if (len == BUFFER_SIZE) {
             fail("JSON File too big\n");
         }
     } while(1);

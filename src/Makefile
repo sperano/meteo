@@ -1,4 +1,4 @@
-VERSION := 0.7
+VERSION := 0.8
 CC := cl65
 LD := ld65
 CFLAGS := -DMETEO_VERSION=\"$(VERSION)\" -O -t apple2enh -C apple2enh-system.cfg -I../include -I../vendor/json65-master/src/ -I../vendor/ip65

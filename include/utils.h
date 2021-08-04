@@ -4,9 +4,10 @@
 #include <stdio.h>
 #include "types.h"
 
-#define SCRATCH_SIZE 1024 // TODO buffer size
+#define BUFFER_SIZE 1024
 
 void fail(const char *fmt, ...);
+void exit_with_error(const char *fmt, ...);
 
 void* safe_malloc(size_t size);
 void* safe_realloc(void *ptr, size_t size);

@@ -73,7 +73,7 @@ ActionResult do_menu(uint8_t y, uint8_t *selected, MenuItem *items, uint8_t tota
             break;
         case ' ':
         case '\r':
-            ar = items[*selected].action(ctx, *selected, 0);
+            ar = items[*selected].action(ctx, *selected);
             action_executed = true;
             break;
         }
@@ -134,9 +134,6 @@ int8_t text_input(uint8_t x, uint8_t y, uint8_t len, char *dest, char *src, uint
                 }
                 break;
             case KeyEscape:
-                //if (flags & ESCAPE_TO_EXIT) {
-                //    exit(1);
-                //}
                 if (flags & ACCEPT_ESCAPE) {
                     return -1;
                 }

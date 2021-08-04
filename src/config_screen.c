@@ -14,10 +14,6 @@
 
 #pragma static-locals(on)
 
-// TODO limit to add city?
-// TODO at least 1 city?
-// TODO ESC supported everywhere
-
 #define print_config_header() printf("Meteo %s - Configuration\n----------------------------------------", METEO_VERSION)
 
 /**
@@ -67,7 +63,7 @@ void _menu_init_confirm_delete(void *ctx) {
  *
  */
 #pragma warn (unused-param, push, off)
-ActionResult config_edit_ethernet_slot(void *ctx, uint8_t idx, uint8_t flags) {
+ActionResult config_edit_ethernet_slot(void *ctx, uint8_t idx) {
     ActionResult ar;
 #ifndef NOCONSOLE
     char ch;
@@ -81,12 +77,8 @@ ActionResult config_edit_ethernet_slot(void *ctx, uint8_t idx, uint8_t flags) {
     print_config_header();
     printf("\n  The ethernet card is usually\n  installed in slot #%d.\n\n\n"
            "  Ethernet Slot: #\n\n\n\n\n\n\n\n\n\n\n\n"
-           "Enter a number between 1 and 7\nor use the arrow keys.\n\n", ETH_INIT_DEFAULT);
-    if (flags & ACCEPT_ESCAPE) {
-        printf("Press [Return] to continue.\nPress [Esc] to exit.");
-    } else {
-        printf("\nPress [Return] to continue.");
-    }
+           "Enter a number between 1 and 7\nor use the arrow keys.\n\n",
+           "Press [Return] to continue.\nPress [Esc] to cancel.", ETH_INIT_DEFAULT);
     while (!stop) {
         data[0] = '0' + current_value;
         memcpy(ptr, data , 1);
@@ -107,10 +99,8 @@ ActionResult config_edit_ethernet_slot(void *ctx, uint8_t idx, uint8_t flags) {
                 current_value = current_value == 7 ? 1 : current_value + 1;
                 break;
             case KeyEscape:
-                if (flags & ACCEPT_ESCAPE) {
-                    ar = CancelEthernetSlot;
-                    stop = true;
-                }
+                ar = EditEthernetSlotCancelled;
+                stop = true;
                 break;
             }
         }
@@ -126,7 +116,7 @@ ActionResult config_edit_ethernet_slot(void *ctx, uint8_t idx, uint8_t flags) {
  *
  */
 #pragma warn (unused-param, push, off)
-ActionResult config_edit_api_key(void *ctx, uint8_t idx, uint8_t flags) {
+ActionResult config_edit_api_key(void *ctx, uint8_t idx) {
 #ifndef NOCONSOLE
     MeteoConfig *cfg = (MeteoConfig*)ctx;
     char dest[API_KEY_LEN + 1];
@@ -136,14 +126,10 @@ ActionResult config_edit_api_key(void *ctx, uint8_t idx, uint8_t flags) {
     print_config_header();
     printf("\n  Generate an API Key at:\n  https://openweathermap.org\n\n"
            "  The API Key is a 32 characters long\n  hexadecimal string.\n\n\n\n"
-           "  API Key:\n\n\n\n\n\n\n\n\n");
-    if (flags & ACCEPT_ESCAPE) {
-        printf("Use Arrow keys to move cursor.\n\nPress [Return] to continue.\nPress [Esc] to exit.");
-    } else {
-        printf("\nUse Arrow keys to move cursor.\n\nPress [Return] to continue.");
-    }
+           "  API Key:\n\n\n\n\n\n\n\n\n"
+           "Use Arrow keys to move cursor.\n\nPress [Return] to continue.\nPress [Esc] to cancel.");
     if (text_input(2, 13, API_KEY_LEN, dest, cfg->api_key, ACCEPT_HEXA | ACCEPT_ESCAPE) == -1) {
-        exit(1); // TODO exit really?
+        return EditAPIKeyCancelled;
     }
     if (strcmp(dest, cfg->api_key)) {
         strcpy(cfg->api_key, dest);
@@ -158,7 +144,7 @@ ActionResult config_edit_api_key(void *ctx, uint8_t idx, uint8_t flags) {
  *
  */
 #pragma warn (unused-param, push, off)
-ActionResult config_edit_cities(void *ctx, uint8_t idx, uint8_t flags) {
+ActionResult config_edit_cities(void *ctx, uint8_t idx) {
     ActionResult ar;
     MeteoConfig *config = (MeteoConfig*)ctx;
     uint8_t nb_cities = 0;
@@ -204,21 +190,18 @@ ActionResult config_edit_cities(void *ctx, uint8_t idx, uint8_t flags) {
 #pragma warn (unused-param, pop)
 
 #pragma warn (unused-param, push, off)
-ActionResult config_edit_city_id(void *ctx, uint8_t idx, uint8_t flags) {
+ActionResult config_edit_city_id(void *ctx, uint8_t idx) {
 #ifndef NOCONSOLE
     Context *ctx_ = (Context*)ctx;
     char dest[CITY_ID_LEN + 1];
     strcpy(dest, ctx_->city->id);
     clrscr();
     print_config_header();
-    printf("\n  City: %s\n\n  Edit the City ID:\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n", ctx_->city->name);
-    if (flags & ACCEPT_ESCAPE) {
-        printf("Use Arrow keys to move cursor.\n\nPress [Return] to continue.\nPress [Esc] to exit.");
-    } else {
-        printf("\nUse Arrow keys to move cursor.\n\nPress [Return] to continue.");
-    }
+    printf("\n  City: %s\n\n  Edit the City ID:\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"
+          "Use Arrow keys to move cursor.\n\n"
+          "Press [Return] to continue.\nPress [Esc] to cancel.", ctx_->city->name);
     if (text_input(21, 5, CITY_ID_LEN, dest, ctx_->city->id, ACCEPT_NUMBER | ACCEPT_SPACE | ACCEPT_ESCAPE) == -1) {
-        exit(1); // TODO exit really?
+        return EditCityIDCancelled;
     };
     clrscr();
     print_config_header();
@@ -233,7 +216,7 @@ ActionResult config_edit_city_id(void *ctx, uint8_t idx, uint8_t flags) {
 #pragma warn (unused-param, pop)
 
 #pragma warn (unused-param, push, off)
-ActionResult config_delete_city_confirmed(void *ctx, uint8_t idx, uint8_t flags) {
+ActionResult config_delete_city_confirmed(void *ctx, uint8_t idx) {
     MeteoConfig *config = ((Context*)ctx)->config;
     CityWeather *cw = ((Context*)ctx)->city;
     CityWeather **new_cities = safe_malloc((config->nb_cities - 1) * sizeof(CityWeather*));
@@ -258,7 +241,7 @@ ActionResult config_delete_city_confirmed(void *ctx, uint8_t idx, uint8_t flags)
 #pragma warn (unused-param, pop)
 
 #pragma warn (unused-param, push, off)
-ActionResult config_delete_city(void *ctx, uint8_t idx, uint8_t flags) {
+ActionResult config_delete_city(void *ctx, uint8_t idx) {
 #ifndef NOCONSOLE
     static MenuItem menu_items[] = {
         {"Yes", config_delete_city_confirmed, NULL},
@@ -273,7 +256,7 @@ ActionResult config_delete_city(void *ctx, uint8_t idx, uint8_t flags) {
 #pragma warn (unused-param, pop)
 
 #pragma warn (unused-param, push, off)
-ActionResult config_fetch_data(void *ctx, uint8_t idx, uint8_t flags) {
+ActionResult config_fetch_data(void *ctx, uint8_t idx) {
 #ifndef NOCONSOLE
     Context *ctx_ = (Context*)ctx;
     MeteoConfig *cfg = ctx_->config;
@@ -293,7 +276,7 @@ bool can_delete_city(void *ctx) {
 }
 
 #pragma warn (unused-param, push, off)
-ActionResult config_edit_city(void *ctx, uint8_t idx, uint8_t flags) {
+ActionResult config_edit_city(void *ctx, uint8_t idx) {
     static MenuItem menu_items[] = {
         {"Edit ID", config_edit_city_id, NULL},
         {"Delete city", config_delete_city, can_delete_city},
@@ -316,7 +299,7 @@ ActionResult config_edit_city(void *ctx, uint8_t idx, uint8_t flags) {
 #pragma warn (unused-param, pop)
 
 #pragma warn (unused-param, push, off)
-ActionResult config_add_city(void *ctx, uint8_t idx, uint8_t flags) {
+ActionResult config_add_city(void *ctx, uint8_t idx) {
     MeteoConfig *config = (MeteoConfig*)ctx;
     char dest[CITY_ID_LEN + 1];
     CityWeather *city;
@@ -328,7 +311,6 @@ ActionResult config_add_city(void *ctx, uint8_t idx, uint8_t flags) {
     print_config_header();
     printf("\n  New City ID:\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
     printf("\nUse Arrow keys to move cursor.\n\nPress [Return] to continue.\n\nPress [Esc] to cancel.");
-    // TODO constants pour -1: and 17
     if (text_input(17, 3, CITY_ID_LEN, dest, dest, ACCEPT_NUMBER | ACCEPT_SPACE | ACCEPT_ESCAPE) == -1) {
         return CityAddCancelled;
     };
@@ -357,7 +339,7 @@ ActionResult config_add_city(void *ctx, uint8_t idx, uint8_t flags) {
 #pragma warn (unused-param, pop)
 
 #pragma warn (unused-param, push, off)
-ActionResult config_set_celcius(void *ctx, uint8_t idx, uint8_t flags) {
+ActionResult config_set_celcius(void *ctx, uint8_t idx) {
     MeteoConfig *config = (MeteoConfig*)ctx;
     if (config->default_units == Fahrenheit) {
         config->dirty = true;
@@ -368,7 +350,7 @@ ActionResult config_set_celcius(void *ctx, uint8_t idx, uint8_t flags) {
 #pragma warn (unused-param, pop)
 
 #pragma warn (unused-param, push, off)
-ActionResult config_set_fahrenheit(void *ctx, uint8_t idx, uint8_t flags) {
+ActionResult config_set_fahrenheit(void *ctx, uint8_t idx) {
     MeteoConfig *config = (MeteoConfig*)ctx;
     if (config->default_units == Celsius) {
         config->dirty = true;
@@ -379,7 +361,7 @@ ActionResult config_set_fahrenheit(void *ctx, uint8_t idx, uint8_t flags) {
 #pragma warn (unused-param, pop)
 
 #pragma warn (unused-param, push, off)
-ActionResult config_edit_default_units(void *ctx, uint8_t idx, uint8_t flags) {
+ActionResult config_edit_default_units(void *ctx, uint8_t idx) {
     static MenuItem menu_items[] = {
         {"Celcius", config_set_celcius},
         {"Fahrenheit", config_set_fahrenheit},
@@ -390,31 +372,31 @@ ActionResult config_edit_default_units(void *ctx, uint8_t idx, uint8_t flags) {
 #pragma warn (unused-param, pop)
 
 #pragma warn (unused-param, push, off)
-ActionResult save_and_exit_config_screen(void *ctx, uint8_t idx, uint8_t flags) {
+ActionResult save_and_exit_config_screen(void *ctx, uint8_t idx) {
     return SaveAndExitConfig;
 }
 #pragma warn (unused-param, pop)
 
 #pragma warn (unused-param, push, off)
-ActionResult cancel_config_screen(void *ctx, uint8_t idx, uint8_t flags) {
+ActionResult cancel_config_screen(void *ctx, uint8_t idx) {
     return CancelAndExitConfig;
 }
 #pragma warn (unused-param, pop)
 
 #pragma warn (unused-param, push, off)
-ActionResult exit_config_screen(void *ctx, uint8_t idx, uint8_t flags) {
+ActionResult exit_config_screen(void *ctx, uint8_t idx) {
     return ExitConfig;
 }
 #pragma warn (unused-param, pop)
 
 #pragma warn (unused-param, push, off)
-ActionResult previous_menu(void *ctx, uint8_t idx, uint8_t flags) {
+ActionResult previous_menu(void *ctx, uint8_t idx) {
     return PreviousMenu;
 }
 #pragma warn (unused-param, pop)
 
 #pragma warn (unused-param, push, off)
-ActionResult previous_menu_city(void *ctx, uint8_t idx, uint8_t flags) {
+ActionResult previous_menu_city(void *ctx, uint8_t idx) {
     return PreviousMenuCity;
 }
 #pragma warn (unused-param, pop)
@@ -427,7 +409,6 @@ bool is_not_dirty(void *ctx) {
     return !((MeteoConfig*)ctx)->dirty;
 }
 
-//#define TOTAL_MENU_ITEMS 8 // TODO variable? sizeof...
 MeteoConfig* config_screen(MeteoConfig *config) {
     // work on a copy for easy cancel
     MeteoConfig *copy_config = clone_config(NULL, config);
@@ -442,7 +423,7 @@ MeteoConfig* config_screen(MeteoConfig *config) {
         {"Exit configuration", exit_config_screen, is_not_dirty},
     };
     bool stop = false;
-    uint8_t selected;
+    uint8_t selected = 0;
     while (!stop) {
         switch(do_menu(4, &selected, menu_items, 8, _menu_init_standard, copy_config)) {
         case SaveAndExitConfig:

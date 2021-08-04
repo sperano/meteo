@@ -14,6 +14,13 @@
 //#include "parser.h"
 #include "utils.h"
 
+void _config_ethernet(MeteoConfig *config) {
+    if (config_edit_ethernet_slot(config, 0) == EditEthernetSlotCancelled) {
+        exit_with_error("Configuration of ethernet slot cancelled.\n");
+    };
+    clrscr();
+}
+
 void print_city_weather(CityWeather *cw) {
     char buffer[5];
     printf("%s: %s (%s)\n", cw->name, cw->weather, cw->description);
@@ -67,7 +74,7 @@ void handle_keyboard(MeteoConfig *config) {
 
 MeteoConfig* init() {
     MeteoConfig *config = init_config(NULL);
-    MeteoState state = read_config(config);
+    MeteoState state = load_config(config);
     uint8_t i = 0;
     char ip_addr[IP_ADDR_STR_LENGTH];
     CityWeather *city;
@@ -107,33 +114,36 @@ MeteoConfig* init() {
                             for (; i < config->nb_cities; ++i) {
                                 printf("\n");
                                 city = config->cities[i];
-                                download_weather_data(config->api_key, city); // TODO test failure
+                                if (!download_weather_data(config->api_key, city)) {
+                                    exit_with_error("Failed to download data for city: %s\nUsing API Key: %s\n", city->id, config->api_key);
+                                }
                                 print_city_weather(city);
                                 city->bitmap = get_bitmap_for_icon(city->icon);
                             }
                         } else {
-                            fail("TODO 1!");
-                            //config_edit_cities(config, "No cities entered.", ESCAPE_TO_EXIT);
-                            //clrscr();
+                            if (config_add_city(config, 0) == CityAddCancelled) {
+                                exit_with_error("Configuration of a new city cancelled.\n");
+                            }
+                            clrscr();
                         }
                     } else {
-                        fail("TODO 2!");
-                        //config_edit_api_key(config, NULL, ESCAPE_TO_EXIT);
-                        //clrscr();
+                        if (config_edit_api_key(config, 0) == EditAPIKeyCancelled) {
+                            exit_with_error("Configuration of API key cancelled.\n");
+                        };
+                        clrscr();
                     }
                 } else {
-                    fail("TODO 3!");
-                    //config_edit_ethernet_slot(config, ">>> Failed to get an IP Address.", 1);
-                    //clrscr();
+                    printf("Failed to obtain an IP address.\n\nPress any key to select another slot.\n");
+                    cgetc();
+                    _config_ethernet(config);
                 }
             } else {
-                fail("TODO 4!");
-                //config_edit_ethernet_slot(config, ">>> Failed to initialize Ethernet.", 1);
-                //clrscr();
+                printf("Failed to initialize ethernet.\n\nPress any key to select another slot.\n");
+                cgetc();
+                _config_ethernet(config);
             }
         } else {
-            config_edit_ethernet_slot(config, 0, ACCEPT_ESCAPE);
-            clrscr();
+            _config_ethernet(config);
         }
     } while (state != OK);
     if (config->dirty) {
@@ -142,14 +152,12 @@ MeteoConfig* init() {
     return config;
 }
 
-// TODO test when there is 0 in config!
 int main(void) {
     MeteoConfig *config;
 
     //POKE(_80COLON, 1);
     printf("Meteo version %s\nby Eric Sperano (2021)\n\n", METEO_VERSION);
     config = init();
-    //cgetc();
     init_gfx();
     clear_screen();
     set_menu_text();

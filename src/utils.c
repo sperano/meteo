@@ -19,6 +19,15 @@ void fail(const char *fmt, ...) {
     exit(1);
 }
 
+void exit_with_error(const char *fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    clrscr();
+    vprintf(fmt, args);
+    va_end(args);
+    exit(1);
+}
+
 void* safe_malloc(size_t size) {
     void *p = malloc(size);
     if (p == NULL) {
