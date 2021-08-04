@@ -70,11 +70,27 @@ typedef struct MeteoConfig {
     bool dirty;
 } MeteoConfig;
 
+typedef enum  {
+    ExitConfig,
+    SaveAndExitConfig,
+    CancelAndExitConfig,
+    EthernetSlotConfigured,
+    CancelEthernetSlot,
+    APIKeyConfigured,
+    CityIDConfigured,
+    CityDeleted,
+    CityAdded,
+    UnitConfigured,
+    CityAddFailed,
+    PreviousMenu,
+    PreviousMenuCity,
+} ActionResult;
+
 #define ACCEPT_ESCAPE 1
 #define ACCEPT_HEXA 2
 #define ACCEPT_NUMBER 4
 #define ACCEPT_SPACE 8
-typedef uint8_t (*MenuAction)(void *ctx, uint8_t idx, uint8_t flags);
+typedef ActionResult (*MenuAction)(void *ctx, uint8_t idx, uint8_t flags);
 
 typedef bool (*MenuVisibilityCheck)(void *ctx);
 
@@ -100,4 +116,5 @@ typedef struct {
     MeteoConfig *config;
     CityWeather *city;
 } Context;
+
 #endif

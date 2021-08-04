@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "config.h"
+#include "config_screen.h"
 #include "gfx.h"
 #include "net.h"
 //#include "parser.h"

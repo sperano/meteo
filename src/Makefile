@@ -6,11 +6,11 @@ CFLAGS := -DMETEO_VERSION=\"$(VERSION)\" -O -t apple2enh -C apple2enh-system.cfg
 
 # 8192 is the default starting
 LDFLAGS := -C apple2enh-system.cfg
-_DEPS := bitmaps.h config.h gfx.h net.h parser.h types.h utils.h
+_DEPS := bitmaps.h config.h config_screen.h gfx.h net.h parser.h types.h utils.h
 DEPS = $(patsubst %,../include/%,$(_DEPS))
 
-OBJ = config.o gfx.o main.o net.o parser.o utils.o json65.o
-OBJ_M = config.o gfx.o main.o net_mock.o parser.o utils.o json65.o
+OBJ = config.o config_screen.o gfx.o main.o net.o parser.o utils.o json65.o
+OBJ_M = config.o config_screen.o gfx.o main.o net_mock.o parser.o utils.o json65.o
 OBJS2 = fetch.o config.o utils.o
 
 LIBS := apple2enh.lib ../vendor/ip65/ip65_tcp.lib ../vendor/ip65/ip65_apple2.lib

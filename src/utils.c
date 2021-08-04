@@ -162,14 +162,16 @@ void draw_menu(Menu *menu, void *ctx) {
     }
 }
 
-uint8_t do_menu(Menu *menu, void *ctx) {
-    uint8_t rc = 0;
-    uint8_t i = 0;
+ActionResult do_menu(Menu *menu, void *ctx) {
+    bool action_executed = false;
+    ActionResult ar;
+    //uint8_t rc = 0;
+    //uint8_t i = 0;
 #ifndef NOCONSOLE
     if (menu->init) {
         menu->init(menu, ctx);
     }
-    while (rc == 0) {
+    while (!action_executed) {
         draw_menu(menu, ctx);
         switch (cgetc()) {
         case KeyLeftArrow:
@@ -189,15 +191,16 @@ uint8_t do_menu(Menu *menu, void *ctx) {
             break;
         case ' ':
         case '\r':
-            rc = menu->items[menu->selected].action(ctx, menu->selected, 0);
-            if (rc == 0 && menu->init) {
-                menu->init(menu, ctx);
-            }
+            ar = menu->items[menu->selected].action(ctx, menu->selected, 0);
+            action_executed = true;
+            //if (rc == 0 && menu->init) {
+            //    menu->init(menu, ctx);
+            //}
             break;
         }
     }
 #endif
-    return rc;
+    return ar;
 }
 
 int8_t text_input(uint8_t x, uint8_t y, uint8_t len, char *dest, char *src, uint8_t flags) {
