@@ -45,7 +45,8 @@ void _menu_init_city(void *ctx) {
     celsius_str(buffer, cw->minimumC);
     printf("  Minimum:     %4sC    %dF\n", buffer, cw->minimumF);
     celsius_str(buffer, cw->maximumC);
-    printf("  Maximum:     %4sC    %dF\n", buffer, cw->maximumF);
+    printf("  Maximum:     %4sC    %dF\n\n", buffer, cw->maximumF);
+    printf("  Icon: %s\n", cw->icon);
 }
 
 /**
@@ -291,7 +292,7 @@ ActionResult config_edit_city(void *ctx, uint8_t idx) {
     new_ctx.config = config;
     new_ctx.city = config->cities[idx];
     do {
-        ar = do_menu(12, &selected, menu_items, 5, _menu_init_city, &new_ctx);
+        ar = do_menu(13, &selected, menu_items, 5, _menu_init_city, &new_ctx);
     }
     while(ar != CityDeleted && ar != PreviousMenuCity);
     return ar;

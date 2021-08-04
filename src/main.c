@@ -154,10 +154,10 @@ MeteoConfig* init() {
 
 int main(void) {
     MeteoConfig *config;
-
-    //POKE(_80COLON, 1);
     printf("Meteo version %s\nby Eric Sperano (2021)\n\n", METEO_VERSION);
     config = init();
+    //POKE(_80COLON, 1);
+
     init_gfx();
     clear_screen();
     set_menu_text();

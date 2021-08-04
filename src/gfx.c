@@ -127,19 +127,28 @@ Bitmap load_bitmap(char *filename) {
 }
 
 //Bitmap
-
-#define MAX_BITMAPS 6
 char *get_filename_for_icon(char *icon) {
     static IconMapping mappings[] = {
         {"01d", "I01D"},
         {"01n", "I01N"},
         {"02d", "I02D"},
         {"02n", "I02N"},
+        {"03d", "I03D"},
+        {"03n", "I03N"},
         {"04d", "I04D"},
-        {"04n", "I04D"},
+        {"04n", "I04N"},
+        {"09d", "I09D"},
+        {"09n", "I09N"},
+        {"10d", "I10D"},
+        {"10n", "I10N"},
+        {"11d", "I11D"},
+        {"11n", "I11N"},
+        {"13d", "I13D"},
+        {"13n", "I13N"},
     };
     uint8_t i;
-    for (i = 0; i < MAX_BITMAPS; ++i) {
+    //uint8_t max_bitmaps = sizeof(mappings) / sizeof(IconMapping);
+    for (i = 0; i < 16; ++i) {
         if (!strcmp(mappings[i].icon, icon)) {
             return mappings[i].filename;
         }
