@@ -11,7 +11,7 @@
 #include "net.h"
 #include "utils.h"
 
-#pragma static-locals(on)
+//#pragma static-locals(on)
 
 /*
 

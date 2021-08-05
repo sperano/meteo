@@ -16,10 +16,12 @@ OBJS2 = fetch.o config.o utils.o
 LIBS := apple2enh.lib ../vendor/ip65/ip65_tcp.lib ../vendor/ip65/ip65_apple2.lib
 
 meteo.system: $(OBJ)
-	$(LD) $(LDFLAGS) -o $@ $^ apple2-iobuf-0800.o $(LIBS)
+	@#$(LD) $(LDFLAGS) -o $@ $^ apple2-iobuf-0800.o $(LIBS)
+	$(LD) $(LDFLAGS) -o $@ $^ $(LIBS)
 
 meteom.system: $(OBJ_M)
-	$(LD) $(LDFLAGS) -o $@ $^ apple2-iobuf-0800.o $(LIBS)
+	@#$(LD) $(LDFLAGS) -o $@ $^ apple2-iobuf-0800.o $(LIBS)
+	$(LD) $(LDFLAGS) -o $@ $^ $(LIBS)
 
 fetch.bin: $(OBJS2)
 	$(LD) $(LDFLAGS) --start-addr 0x0C00 -o $@ $^ apple2enh-iobuf-0800.o apple2enh.lib ../vendor/ip65/ip65_tcp.lib ../vendor/ip65/ip65_apple2.lib

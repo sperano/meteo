@@ -12,7 +12,7 @@
 #include "ui.h"
 #include "utils.h"
 
-#pragma static-locals(on)
+//#pragma static-locals(on)
 
 #define print_config_header() printf("Meteo %s - Configuration\n----------------------------------------", METEO_VERSION)
 

@@ -47,6 +47,7 @@ void handle_keyboard(MeteoConfig *config) {
         case 'C':
             exit_gfx();
             config = config_screen(config);
+            city_idx = 0;
             init_gfx();
             set_menu_text();
             break;
@@ -72,12 +73,14 @@ void handle_keyboard(MeteoConfig *config) {
     }
 }
 
-MeteoConfig* init() {
-    MeteoConfig *config = init_config(NULL);
-    MeteoState state = load_config(config);
+void init(MeteoConfig *config) {
+    //MeteoConfig *config = init_config(NULL);
+    MeteoState state;
     uint8_t i = 0;
     char ip_addr[IP_ADDR_STR_LENGTH];
     CityWeather *city;
+
+    state = load_config(init_config(config));
 
     if (state != OK) {
         switch (state) {
@@ -114,6 +117,7 @@ MeteoConfig* init() {
                             for (; i < config->nb_cities; ++i) {
                                 printf("\n");
                                 city = config->cities[i];
+                                //printf("City: %s\n", city->id);
                                 if (!download_weather_data(config->api_key, city)) {
                                     exit_with_error("Failed to download data for city: %s\nUsing API Key: %s\n", city->id, config->api_key);
                                 }
@@ -149,21 +153,22 @@ MeteoConfig* init() {
     if (config->dirty) {
         save_config(config);
     }
-    return config;
+    //return config;
 }
 
 int main(void) {
-    MeteoConfig *config;
+    static MeteoConfig config;
+    _heapadd ((void *) 0x0800, 0x1800);
     printf("Meteo version %s\nby Eric Sperano (2021)\n\n", METEO_VERSION);
-    config = init();
+    init(&config);
     //POKE(_80COLON, 1);
 
     init_gfx();
     clear_screen();
     set_menu_text();
-    handle_keyboard(config);
+    handle_keyboard(&config);
     exit_gfx();
     clrscr();
-    free_config(config, true);
+    free_config(&config, false);
     return 0;
 }
