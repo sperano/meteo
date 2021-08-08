@@ -44,6 +44,10 @@ void test_utf8_to_ascii(void) {
     assert(!strcmp(str2, utf8_to_ascii(str2)));
 }
 
+void test_my_asm_func(void) {
+    assert(my_asm_func(2, 4) == 6);
+}
+
 /*
 void test_prepare_text(void) {
     CityWeather cw;

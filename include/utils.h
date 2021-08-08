@@ -6,7 +6,10 @@
 
 #define BUFFER_SIZE 1024
 
-void fail(const char *fmt, ...);
+uint8_t my_asm_func(uint8_t x, uint8_t y);
+
+void fail(FailCode fail_code, uint16_t extra);
+
 void exit_with_error(const char *fmt, ...);
 
 void* safe_malloc(size_t size);

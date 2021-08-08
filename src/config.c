@@ -38,124 +38,84 @@ Config file structure:
 
 */
 
+MeteoConfig config;
+
 /**
  *
  */
-MeteoConfig* init_config(MeteoConfig *config) {
+void init_config(void) {
     uint8_t i = 0;
-    if (config == NULL) {
-        config = safe_malloc(sizeof(MeteoConfig));
-    }
     for (; i < 32; ++i) {
-        config->api_key[i] = '.';
+        config.api_key[i] = '.';
     }
-    config->api_key[32] = 0;
-    config->ethernet_slot = ETH_INIT_DEFAULT;
-    config->default_units = Fahrenheit;
-    config->nb_cities = 0;
-    config->cities = NULL;
-    config->dirty = false;
-    return config;
-}
-
-MeteoConfig* clone_config(MeteoConfig *dest, MeteoConfig *src) {
-    uint8_t i = 0;
-    CityWeather *cw_dest, *cw_src;
-
-    if (dest == NULL) {
-        dest = safe_malloc(sizeof(MeteoConfig));
-    }
-    dest->ethernet_slot = src->ethernet_slot;
-    dest->default_units = src->default_units;
-    dest->dirty = src->dirty;
-    strcpy(dest->api_key, src->api_key);
-    dest->nb_cities = src->nb_cities;
-    dest->cities = safe_malloc(dest->nb_cities * sizeof(CityWeather*));
-    for (; i < dest->nb_cities; ++i) {
-        dest->cities[i] = safe_malloc(sizeof(CityWeather));
-        cw_dest = dest->cities[i];
-        cw_src = src->cities[i];
-
-        strcpy(cw_dest->id, cw_src->id);
-        cw_dest->name = alloc_copy(cw_src->name);
-        cw_dest->description = alloc_copy(cw_src->description);
-        cw_dest->icon = alloc_copy(cw_src->icon);
-        cw_dest->weather = alloc_copy(cw_src->weather);
-        cw_dest->temperatureC = cw_src->temperatureC;
-        cw_dest->minimumC = cw_src->minimumC;
-        cw_dest->maximumC = cw_src->maximumC;
-        cw_dest->temperatureF = cw_src->temperatureF;
-        cw_dest->minimumF = cw_src->minimumF;
-        cw_dest->maximumF = cw_src->maximumF;
-        cw_dest->humidity = cw_src->humidity;
-        cw_dest->bitmap = cw_src->bitmap;
-    }
-    return dest;
+    config.api_key[32] = 0;
+    config.ethernet_slot = ETH_INIT_DEFAULT;
+    config.default_units = Fahrenheit;
+    config.nb_cities = 0;
+    config.cities = NULL;
+    config.dirty = false;
 }
 
 /**
  * Free the memory that is dynamically allocated in the MeteoConfig structure.
  */
-void free_config(MeteoConfig *config, bool free_ptr) {
+void free_config(void) {
     uint8_t i = 0;
-    for (; i < config->nb_cities; ++i) {
-        free(config->cities[i]->name);
-        free(config->cities[i]->weather);
-        free(config->cities[i]->description);
-        free(config->cities[i]->icon);
-        free(config->cities[i]);
+    for (; i < config.nb_cities; ++i) {
+        free(config.cities[i]->name);
+        free(config.cities[i]->weather);
+        free(config.cities[i]->description);
+        free(config.cities[i]->icon);
+        free(config.cities[i]);
     }
-    free(config->cities);
-    if (free_ptr) {
-        free(config);
-    }
+    free(config.cities);
 }
 
 /**
  * Print the MeteoConfig structure content to standard output.
  */
-void print_config(MeteoConfig *config) {
+void print_config(void) {
     uint8_t i;
-    printf("Ethernet Slot: %d\nKey: \"%s\"\nNb Cities: %d\n", config->ethernet_slot, config->api_key, config->nb_cities);
-    for (i = 0; i < config->nb_cities; ++i) {
-        printf("CityID[%d]: %s\n", i, config->cities[i]->id);
+    printf("Ethernet Slot: %d\nKey: \"%s\"\nNb Cities: %d\n", config.ethernet_slot, config.api_key, config.nb_cities);
+    for (i = 0; i < config.nb_cities; ++i) {
+        printf("CityID[%d]: %s\n", i, config.cities[i]->id);
     }
 }
 
 /**
  *
  */
-void save_config(MeteoConfig *config) {
+void save_config(void) {
     uint8_t i, j;
     FILE *file = fopen(METEO_CONFIG_FILENAME, "w");
     if (file == NULL) {
-        fail("Can't open config file\n");
+        fail(FailOpenConfigFileWrite, 0);
     }
     putc(0xe5, file);
     putc(0x76, file);
     putc(0x01, file); // version
-    putc(config->ethernet_slot, file);
-    putc(config->default_units == Celsius ?
+    putc(config.ethernet_slot, file);
+    putc(config.default_units == Celsius ?
         CONFIG_DEFAULT_UNITS_CELCIUS : CONFIG_DEFAULT_UNITS_FAHRENHEIT, file);
     for (i = 0; i < 32; ++i) {
-        putc(config->api_key[i], file);
+        putc(config.api_key[i], file);
     }
-    putc(config->nb_cities, file);
-    for (i = 0; i < config->nb_cities; ++i) {
+    putc(config.nb_cities, file);
+    for (i = 0; i < config.nb_cities; ++i) {
         for (j = 0; j < 8; ++j) {
-            putc(config->cities[i]->id[j], file);
+            putc(config.cities[i]->id[j], file);
         }
     }
     fclose(file);
-    config->dirty = 0;
+    config.dirty = 0;
 }
 
-MeteoState load_config(MeteoConfig *config) {
+MeteoState load_config(void) {
     uint8_t i, j;
     FILE *file;
     CityWeather *cw;
 
-    printf("Loading config %s\n", METEO_CONFIG_FILENAME);
+    //printf("Loading config %s\n", METEO_CONFIG_FILENAME);
     file = fopen(METEO_CONFIG_FILENAME, "r");
     if (file == NULL) {
         return ConfigOpenError;
@@ -169,51 +129,50 @@ MeteoState load_config(MeteoConfig *config) {
         return ConfigInvalidMagic;
     }
     getc(file); // version
-    config->ethernet_slot = getc(file); // ethernet slot
+    config.ethernet_slot = getc(file); // ethernet slot
     switch (getc(file)) {
     case CONFIG_DEFAULT_UNITS_CELCIUS:
-        config->default_units = Celsius;
+        config.default_units = Celsius;
         break;
     case CONFIG_DEFAULT_UNITS_FAHRENHEIT:
-        config->default_units = Fahrenheit;
+        config.default_units = Fahrenheit;
         break;
     }
     for (i = 0; i < 32; ++i) {
-        config->api_key[i] = getc(file); // app id
+        config.api_key[i] = getc(file); // app id
     }
-    config->api_key[32] = 0;
-    config->nb_cities = getc(file);
-    if (config->nb_cities > 0) {
-        config->cities = safe_malloc(config->nb_cities * sizeof(CityWeather*));
+    config.api_key[32] = 0;
+    config.nb_cities = getc(file);
+    if (config.nb_cities > 0) {
+        config.cities = safe_malloc(config.nb_cities * sizeof(CityWeather*));
     }
-    for (i = 0; i < config->nb_cities; ++i) {
-        cw = config->cities[i] = safe_malloc(sizeof(CityWeather));
-        //config->city_ids[i] = safe_malloc(9 * sizeof(char), "CityID");
+    for (i = 0; i < config.nb_cities; ++i) {
+        cw = config.cities[i] = safe_malloc(sizeof(CityWeather));
         for (j = 0; j < 8; ++j) {
             cw->id[j] = getc(file); // city id
         }
         cw->id[8] = 0;
     }
     fclose(file);
-    config->dirty = 0;
+    config.dirty = 0;
     return OK;
 }
 
 /**
  *
  */
-MeteoState validate_config_ethernet(MeteoConfig *config) {
-    return (config->ethernet_slot < 1 || config->ethernet_slot > 7) ? ConfigInvalidEthernetSlot : OK;
+MeteoState validate_config_ethernet(void) {
+    return (config.ethernet_slot < 1 || config.ethernet_slot > 7) ? ConfigInvalidEthernetSlot : OK;
 }
 
-MeteoState validate_config_api_key(MeteoConfig *config) {
+MeteoState validate_config_api_key(void) {
     uint8_t i = 0;
     char ch;
-    if (strlen(config->api_key) != 32) {
+    if (strlen(config.api_key) != 32) {
         return ConfigInvalidApiKey;
     }
     for (; i < 32; ++i) {
-        ch = config->api_key[i];
+        ch = config.api_key[i];
         if (!((ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F'))) {
             return ConfigInvalidApiKey;
         }
@@ -221,6 +180,6 @@ MeteoState validate_config_api_key(MeteoConfig *config) {
     return OK;
 }
 
-MeteoState validate_config_cities(MeteoConfig *config) {
-    return config->nb_cities ? OK : ConfigInvalidNoCity;
+MeteoState validate_config_cities(void) {
+    return config.nb_cities ? OK : ConfigInvalidNoCity;
 }

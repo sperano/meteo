@@ -9,18 +9,17 @@
 #include <stdint.h>
 #include "types.h"
 
-MeteoConfig* init_config(MeteoConfig *cfg);
-MeteoConfig* clone_config(MeteoConfig *dest, MeteoConfig *src);
-void free_config(MeteoConfig *config, bool free_ptr);
-void print_config(MeteoConfig *config);
+extern MeteoConfig config;
 
-MeteoState load_config(MeteoConfig *config);
-void save_config(MeteoConfig *config);
+void init_config(void);
+void free_config(void);
+void print_config(void);
 
-MeteoState validate_config_ethernet(MeteoConfig *config);
-MeteoState validate_config_api_key(MeteoConfig *config);
-MeteoState validate_config_cities(MeteoConfig *config);
+MeteoState load_config(void);
+void save_config(void);
 
-//void ensure_config(MeteoConfig *config);
+MeteoState validate_config_ethernet(void);
+MeteoState validate_config_api_key(void);
+MeteoState validate_config_cities(void);
 
 #endif

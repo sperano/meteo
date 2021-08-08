@@ -11,6 +11,7 @@ void test_celsius_str(void); // 4
 void test_utf8_to_ascii(void); // 5
 void test_init_config(void); // 6
 void test_clone_config(void); // 7
+void test_my_asm_func(void); // 8
 //void test_prepare_text(void);
 
 #endif

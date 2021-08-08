@@ -4,17 +4,14 @@
 #include <string.h>
 #include "utils.h"
 
-void fail(const char *fmt, ...) {
-    va_list args;
-    va_start(args, fmt);
+void fail(FailCode fail_code, uint16_t extra) {
     if (errno) {
         perror("Error");
     }
-    vprintf(fmt, args);
-    va_end(args);
-    printf("Press any key to exit.\n");
+    printf("FAIL CODE=%d (%d)\n", fail_code, extra);
+//    printf("Press any key to exit.\n");
 #ifndef NOCONSOLE
-    cgetc();
+//    cgetc();
 #endif
     exit(1);
 }
@@ -22,7 +19,9 @@ void fail(const char *fmt, ...) {
 void exit_with_error(const char *fmt, ...) {
     va_list args;
     va_start(args, fmt);
+#ifndef NOCONSOLE
     clrscr();
+#endif
     vprintf(fmt, args);
     va_end(args);
     exit(1);
@@ -31,7 +30,7 @@ void exit_with_error(const char *fmt, ...) {
 void* safe_malloc(size_t size) {
     void *p = malloc(size);
     if (p == NULL) {
-        fail("safe_malloc size: %d\n", size);
+        fail(FailMalloc, size);
     }
     return p;
 }
@@ -39,7 +38,7 @@ void* safe_malloc(size_t size) {
 void* safe_realloc(void *ptr, size_t size) {
     void *p = realloc(ptr, size);
     if (p == NULL) {
-        fail("safe_realloc size: %d\n", size);
+        fail(FailRealloc, size);
     }
     return p;
 }

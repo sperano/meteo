@@ -4,12 +4,12 @@
 #include "parser.h"
 #include "utils.h"
 
-MeteoState init_ethernet(MeteoConfig *) {
+MeteoState init_ethernet() {
     //return EthernetInitFailed;
     return OK;
 }
 
-MeteoState init_dhcp(MeteoConfig *) {
+MeteoState init_dhcp() {
     //return DHCPInitFailed;
     return OK;
 }
@@ -18,7 +18,7 @@ void get_ip_addr(char *buffer) {
     strcpy(buffer, "192.168.0.20");
 }
 
-bool download_weather_data(char *, CityWeather *cw) {
+bool download_weather_data(CityWeather *cw) {
     static char buffer[BUFFER_SIZE];
     uint16_t len = 0;
     char filename[15];

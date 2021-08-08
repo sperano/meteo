@@ -5,6 +5,15 @@
 #include <stdint.h>
 
 typedef enum {
+    FailOpenConfigFileWrite = 1,
+    FailOpenBitmapFileRead,
+    FailBitmapElementCount,
+    FailJSONParsing,
+    FailMalloc,
+    FailRealloc,
+} FailCode;
+
+typedef enum {
     OK,
     ConfigOpenError,
     ConfigInvalidMagic,
@@ -108,9 +117,11 @@ typedef struct {
     MenuVisibilityCheck visibility_check;
 } MenuItem;
 
+/*
 typedef struct {
     MeteoConfig *config;
     CityWeather *city;
 } Context;
+*/
 
 #endif

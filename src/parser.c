@@ -101,6 +101,6 @@ void parse_api_response(CityWeather *cw, char *buffer, size_t len) {
     j65_init(&parser, cw, my_callback, MAX_PARSER_DEPTH);
     rc = j65_parse(&parser, buffer, len);
     if (rc != J65_DONE) {
-        fail("Parser error rc=%d\n", rc);
+        fail(FailJSONParsing, rc);
     }
 }

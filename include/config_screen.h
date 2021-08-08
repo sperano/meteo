@@ -5,7 +5,7 @@
 #include "config.h"
 #include "utils.h"
 
-MeteoConfig* config_screen(MeteoConfig *config);
+void config_screen(void);
 
 ActionResult previous_menu(void *ctx, uint8_t idx);
 ActionResult previous_menu_city(void *ctx, uint8_t idx);

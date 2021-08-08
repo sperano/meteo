@@ -32,8 +32,7 @@ void _menu_init_standard(void *ctx) {
  * Clear the screen, display header and city data from context
  */
 void _menu_init_city(void *ctx) {
-    Context *ctx_ = (Context*)ctx;
-    CityWeather *cw = ctx_->city;
+    CityWeather *cw = (CityWeather*)ctx;
     char buffer[16];
 #ifndef NOCONSOLE
     clrscr();
@@ -46,6 +45,7 @@ void _menu_init_city(void *ctx) {
     printf("  Minimum:     %4sC    %dF\n", buffer, cw->minimumF);
     celsius_str(buffer, cw->maximumC);
     printf("  Maximum:     %4sC    %dF\n\n", buffer, cw->maximumF);
+    //printf("  Humidity:    %d\n\n", cw->humidity);
     printf("  Icon: %s\n", cw->icon);
 }
 
@@ -57,7 +57,7 @@ void _menu_init_confirm_delete(void *ctx) {
     clrscr();
 #endif
     print_config_header();
-    printf("\n  Are you sure you want to delete\n  %s ?", ((Context*)ctx)->city->name);
+    printf("\n  Are you sure you want to delete\n  %s ?", ((CityWeather*)ctx)->name);
 }
 
 /**
@@ -69,7 +69,7 @@ ActionResult config_edit_ethernet_slot(void *ctx, uint8_t idx) {
 #ifndef NOCONSOLE
     char ch;
     bool stop = false;
-    uint8_t current_value = ((MeteoConfig*)ctx)->ethernet_slot;
+    uint8_t current_value = config.ethernet_slot;
     uint8_t orig_value = current_value;
     void *ptr = (void*)(VideoBases[7]+18);
     char data[1];
@@ -78,7 +78,7 @@ ActionResult config_edit_ethernet_slot(void *ctx, uint8_t idx) {
     print_config_header();
     printf("\n  The ethernet card is usually\n  installed in slot #%d.\n\n\n"
            "  Ethernet Slot: #\n\n\n\n\n\n\n\n\n\n\n\n"
-           "Enter a number between 1 and 7\nor use the arrow keys.\n\n",
+           "Enter a number between 1 and 7\nor use the arrow keys.\n\n"
            "Press [Return] to continue.\nPress [Esc] to cancel.", ETH_INIT_DEFAULT);
     while (!stop) {
         data[0] = '0' + current_value;
@@ -106,8 +106,8 @@ ActionResult config_edit_ethernet_slot(void *ctx, uint8_t idx) {
             }
         }
     }
-    ((MeteoConfig*)ctx)->ethernet_slot = current_value;
-    ((MeteoConfig*)ctx)->dirty = orig_value != current_value;
+    config.ethernet_slot = current_value;
+    config.dirty = orig_value != current_value;
 #endif
     return ar;
 }
@@ -119,25 +119,30 @@ ActionResult config_edit_ethernet_slot(void *ctx, uint8_t idx) {
 #pragma warn (unused-param, push, off)
 ActionResult config_edit_api_key(void *ctx, uint8_t idx) {
 #ifndef NOCONSOLE
-    MeteoConfig *cfg = (MeteoConfig*)ctx;
     char dest[API_KEY_LEN + 1];
 
-    strcpy(dest, cfg->api_key);
+    strcpy(dest, config.api_key);
     clrscr();
     print_config_header();
     printf("\n  Generate an API Key at:\n  https://openweathermap.org\n\n"
            "  The API Key is a 32 characters long\n  hexadecimal string.\n\n\n\n"
            "  API Key:\n\n\n\n\n\n\n\n\n"
            "Use Arrow keys to move cursor.\n\nPress [Return] to continue.\nPress [Esc] to cancel.");
-    if (text_input(2, 13, API_KEY_LEN, dest, cfg->api_key, ACCEPT_HEXA | ACCEPT_ESCAPE) == -1) {
+    if (text_input(2, 13, API_KEY_LEN, dest, config.api_key, ACCEPT_HEXA | ACCEPT_ESCAPE) == -1) {
         return EditAPIKeyCancelled;
     }
-    if (strcmp(dest, cfg->api_key)) {
-        strcpy(cfg->api_key, dest);
-        cfg->dirty = true;
+    if (strcmp(dest, config.api_key)) {
+        strcpy(config.api_key, dest);
+        config.dirty = true;
     }
 #endif
     return APIKeyConfigured;
+}
+#pragma warn (unused-param, pop)
+
+#pragma warn (unused-param, push, off)
+bool can_add_city(void *ctx) {
+    return config.nb_cities < 3;
 }
 #pragma warn (unused-param, pop)
 
@@ -147,16 +152,15 @@ ActionResult config_edit_api_key(void *ctx, uint8_t idx) {
 #pragma warn (unused-param, push, off)
 ActionResult config_edit_cities(void *ctx, uint8_t idx) {
     ActionResult ar;
-    MeteoConfig *config = (MeteoConfig*)ctx;
     uint8_t nb_cities = 0;
     uint8_t i = 0;
     uint8_t selected = 0;
     MenuItem *menu_items;
     do {
-        nb_cities = config->nb_cities;
+        nb_cities = config.nb_cities;
         menu_items = safe_malloc((nb_cities + 4) * sizeof(MenuItem));
         for(i = 0; i < nb_cities; ++i) {
-            menu_items[i].name = config->cities[i]->name;
+            menu_items[i].name = config.cities[i]->name;
             menu_items[i].action = config_edit_city;
             menu_items[i].visibility_check = NULL;
         }
@@ -164,7 +168,7 @@ ActionResult config_edit_cities(void *ctx, uint8_t idx) {
         menu_items[nb_cities].visibility_check = NULL;
         menu_items[nb_cities + 1].name = "Add a city";
         menu_items[nb_cities + 1].action = config_add_city;
-        menu_items[nb_cities + 1].visibility_check = NULL;
+        menu_items[nb_cities + 1].visibility_check = can_add_city;
 
         menu_items[nb_cities + 2].name = "-";
         menu_items[nb_cities + 2].action = NULL;
@@ -175,7 +179,7 @@ ActionResult config_edit_cities(void *ctx, uint8_t idx) {
         ar = do_menu(4, &selected, menu_items, nb_cities + 4, _menu_init_standard, ctx);
         switch(ar) {
         case CityAdded:
-            selected = config->nb_cities - 1;
+            selected = nb_cities - 1;
             break;
         case CityDeleted:
             if (selected > 0) {
@@ -193,23 +197,23 @@ ActionResult config_edit_cities(void *ctx, uint8_t idx) {
 #pragma warn (unused-param, push, off)
 ActionResult config_edit_city_id(void *ctx, uint8_t idx) {
 #ifndef NOCONSOLE
-    Context *ctx_ = (Context*)ctx;
+    CityWeather *city = (CityWeather*)ctx;
     char dest[CITY_ID_LEN + 1];
-    strcpy(dest, ctx_->city->id);
+    strcpy(dest, city->id);
     clrscr();
     print_config_header();
     printf("\n  City: %s\n\n  Edit the City ID:\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"
           "Use Arrow keys to move cursor.\n\n"
-          "Press [Return] to continue.\nPress [Esc] to cancel.", ctx_->city->name);
-    if (text_input(21, 5, CITY_ID_LEN, dest, ctx_->city->id, ACCEPT_NUMBER | ACCEPT_SPACE | ACCEPT_ESCAPE) == -1) {
+          "Press [Return] to continue.\nPress [Esc] to cancel.", city->name);
+    if (text_input(21, 5, CITY_ID_LEN, dest, city->id, ACCEPT_NUMBER | ACCEPT_SPACE | ACCEPT_ESCAPE) == -1) {
         return EditCityIDCancelled;
     };
     clrscr();
     print_config_header();
-    if (strcmp(dest, ctx_->city->id)) {
-        memcpy(ctx_->city->id, dest, CITY_ID_LEN);
-        ctx_->city->id[CITY_ID_LEN] = 0;
-        ctx_->config->dirty = true;
+    if (strcmp(dest, city->id)) {
+        memcpy(city->id, dest, CITY_ID_LEN);
+        city->id[CITY_ID_LEN] = 0;
+        config.dirty = true;
     }
 #endif
     return CityIDConfigured;
@@ -218,24 +222,23 @@ ActionResult config_edit_city_id(void *ctx, uint8_t idx) {
 
 #pragma warn (unused-param, push, off)
 ActionResult config_delete_city_confirmed(void *ctx, uint8_t idx) {
-    MeteoConfig *config = ((Context*)ctx)->config;
-    CityWeather *cw = ((Context*)ctx)->city;
-    CityWeather **new_cities = safe_malloc((config->nb_cities - 1) * sizeof(CityWeather*));
+    CityWeather *cw = (CityWeather*)ctx;
+    CityWeather **new_cities = safe_malloc((config.nb_cities - 1) * sizeof(CityWeather*));
     uint8_t i = 0;
     uint8_t j = 0;
 
-    for (; i < config->nb_cities; ++i) {
-        if (strcmp(cw->id, config->cities[i]->id) == 0) {
-            free(config->cities[i]);
+    for (; i < config.nb_cities; ++i) {
+        if (strcmp(cw->id, config.cities[i]->id) == 0) {
+            free(config.cities[i]);
         } else {
-            new_cities[j] = config->cities[i];
+            new_cities[j] = config.cities[i];
             ++j;
         }
     }
-    free(config->cities);
-    config->cities = new_cities;
-    config->nb_cities--;
-    config->dirty = true;
+    free(config.cities);
+    config.cities = new_cities;
+    config.nb_cities--;
+    config.dirty = true;
     return CityDeleted;
 }
 
@@ -248,7 +251,7 @@ ActionResult config_delete_city(void *ctx, uint8_t idx) {
         {"Yes", config_delete_city_confirmed, NULL},
         {"No", previous_menu, NULL},
     };
-    uint8_t selected;
+    uint8_t selected = 1;
     return do_menu(8, &selected, menu_items, 2, _menu_init_confirm_delete, ctx);
 #else
     return PreviousMenu;
@@ -259,22 +262,25 @@ ActionResult config_delete_city(void *ctx, uint8_t idx) {
 #pragma warn (unused-param, push, off)
 ActionResult config_fetch_data(void *ctx, uint8_t idx) {
 #ifndef NOCONSOLE
-    Context *ctx_ = (Context*)ctx;
-    MeteoConfig *cfg = ctx_->config;
-    CityWeather *city = ctx_->city;
-    if (!download_weather_data(cfg->api_key, city)) {
+    CityWeather *city = (CityWeather*)ctx;
+    clrscr();
+    print_config_header();
+    printf("\nCity: %s\n\n", city->name);
+    if (!download_weather_data(city)) {
         return FetchDataFailed;
     }
     city->bitmap = get_bitmap_for_icon(city->icon);
-    cfg->dirty = true;
+    config.dirty = true;
 #endif
     return DataFetched;
 }
 #pragma warn (unused-param, pop)
 
+#pragma warn (unused-param, push, off)
 bool can_delete_city(void *ctx) {
-    return ((Context*)ctx)->config->nb_cities > 1;
+    return config.nb_cities > 1;
 }
+#pragma warn (unused-param, pop)
 
 #pragma warn (unused-param, push, off)
 ActionResult config_edit_city(void *ctx, uint8_t idx) {
@@ -288,11 +294,8 @@ ActionResult config_edit_city(void *ctx, uint8_t idx) {
     MeteoConfig *config = (MeteoConfig*)ctx;
     ActionResult ar = 0;
     uint8_t selected = 0;
-    Context new_ctx = {};
-    new_ctx.config = config;
-    new_ctx.city = config->cities[idx];
     do {
-        ar = do_menu(13, &selected, menu_items, 5, _menu_init_city, &new_ctx);
+        ar = do_menu(14, &selected, menu_items, 5, _menu_init_city, config->cities[idx]);
     }
     while(ar != CityDeleted && ar != PreviousMenuCity);
     return ar;
@@ -318,7 +321,7 @@ ActionResult config_add_city(void *ctx, uint8_t idx) {
 
     city = safe_malloc(sizeof(CityWeather));
     strcpy(city->id, dest);
-    if (!download_weather_data(config->api_key, city)) {
+    if (!download_weather_data(city)) {
         free(city);
         clrscr();
         print_config_header();
@@ -410,9 +413,8 @@ bool is_not_dirty(void *ctx) {
     return !((MeteoConfig*)ctx)->dirty;
 }
 
-MeteoConfig* config_screen(MeteoConfig *config) {
+void config_screen(void) {
     // work on a copy for easy cancel
-    MeteoConfig *copy_config = clone_config(NULL, config);
     static MenuItem menu_items[] = {
         {"Ethernet Slot", config_edit_ethernet_slot},
         {"API Key", config_edit_api_key},
@@ -426,19 +428,18 @@ MeteoConfig* config_screen(MeteoConfig *config) {
     bool stop = false;
     uint8_t selected = 0;
     while (!stop) {
-        switch(do_menu(4, &selected, menu_items, 8, _menu_init_standard, copy_config)) {
+        switch(do_menu(4, &selected, menu_items, 8, _menu_init_standard, &config)) {
         case SaveAndExitConfig:
-            free(config); // release old config
-            config = copy_config;
-            save_config(config);
+            save_config();
             stop = true;
             break;
         case CancelAndExitConfig:
+            load_config();
+            stop = true;
+            break;
         case ExitConfig:
-            free(copy_config);
             stop = true;
             break;
         }
     }
-    return config;
 }

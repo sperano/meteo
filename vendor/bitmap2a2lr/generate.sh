@@ -47,4 +47,4 @@ cat ../../bitmaps/13d.bmp | ./bitmap2a2lr ${COLORS} >../../a2lr/13d.a2lr
 echo "13n"
 cat ../../bitmaps/13n.bmp | ./bitmap2a2lr ${COLORS} >../../a2lr/13n.a2lr
 echo "404"
-cat ../../bitmaps/404.bmp | ./bitmap2a2lr ${C1}=1 >../../a2lr/404.a2lr
+cat ../../bitmaps/404.bmp | ./bitmap2a2lr 0000f9f90000ffff=14 ffff4040ffffffff=3 949421219292ffff=3 >../../a2lr/404.a2lr

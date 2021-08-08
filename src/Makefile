@@ -1,8 +1,9 @@
-VERSION := 0.9
+#33972
+#31625
+VERSION := 1.0
 CC := cl65
 LD := ld65
 CFLAGS := -DMETEO_VERSION=\"$(VERSION)\" -O -t apple2enh -C apple2enh-system.cfg -I../include -I../vendor/json65-master/src/ -I../vendor/ip65
-#CFLAGS := -DMETEO_VERSION=\"$(VERSION)\" -O -t apple2enh -C apple2enh.cfg -I../include -I../vendor/json65-master/src/ -I../vendor/ip65 -DMOCK_IP65
 
 # 8192 is the default starting
 LDFLAGS := -C apple2enh-system.cfg
@@ -17,11 +18,11 @@ LIBS := apple2enh.lib ../vendor/ip65/ip65_tcp.lib ../vendor/ip65/ip65_apple2.lib
 
 meteo.system: $(OBJ)
 	@#$(LD) $(LDFLAGS) -o $@ $^ apple2-iobuf-0800.o $(LIBS)
-	$(LD) $(LDFLAGS) -o $@ $^ $(LIBS)
+	$(LD) $(LDFLAGS) -m $@.map -vm -o $@ $^ $(LIBS)
 
 meteom.system: $(OBJ_M)
 	@#$(LD) $(LDFLAGS) -o $@ $^ apple2-iobuf-0800.o $(LIBS)
-	$(LD) $(LDFLAGS) -o $@ $^ $(LIBS)
+	$(LD) $(LDFLAGS) -m $@.map -vm -o $@ $^ $(LIBS)
 
 fetch.bin: $(OBJS2)
 	$(LD) $(LDFLAGS) --start-addr 0x0C00 -o $@ $^ apple2enh-iobuf-0800.o apple2enh.lib ../vendor/ip65/ip65_tcp.lib ../vendor/ip65/ip65_apple2.lib
@@ -35,4 +36,4 @@ fetch.bin: $(OBJS2)
 .PHONY: clean
 
 clean:
-	rm -f *.o *~ *.bin *.system
+	rm -f *.o *~ *.bin *.system *.map

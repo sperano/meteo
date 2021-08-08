@@ -6,11 +6,11 @@
 #include "parser.h"
 #include "utils.h"
 
-MeteoState init_ethernet(MeteoConfig *config) {
-    return ip65_init(config->ethernet_slot) ? EthernetInitFailed : OK;
+MeteoState init_ethernet() {
+    return ip65_init(config.ethernet_slot) ? EthernetInitFailed : OK;
 }
 
-MeteoState init_dhcp(MeteoConfig *) {
+MeteoState init_dhcp() {
     return dhcp_init() ? DHCPInitFailed : OK;
 }
 
@@ -19,14 +19,14 @@ void get_ip_addr(char *buffer) {
     snprintf(buffer, IP_ADDR_STR_LENGTH, "%d.%d.%d.%d\n", ip_bytes[0], ip_bytes[1], ip_bytes[2], ip_bytes[3]);
 }
 
-bool download_weather_data(char *api_key, CityWeather *cw) {
+bool download_weather_data(CityWeather *cw) {
     //static char url[128]; // must be 1460 bytes
     char *url = safe_malloc(1460);
     char *buffer = safe_malloc(BUFFER_SIZE);
     uint16_t len = 0;
     char *ptr = url;
 
-    sprintf(url, "http://api.openweathermap.org/data/2.5/weather?id=%s&appid=%s", cw->id, api_key);
+    sprintf(url, "http://api.openweathermap.org/data/2.5/weather?id=%s&appid=%s", cw->id, config.api_key);
     while (*ptr) {
         *ptr = toascii(*ptr);
         ++ptr;

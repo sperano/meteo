@@ -6,9 +6,9 @@
 
 #define IP_ADDR_STR_LENGTH 16 // XXX.XXX.XXX.XXX (4*3)+3+NUL
 
-MeteoState init_ethernet(MeteoConfig *config);
-MeteoState init_dhcp(MeteoConfig *config);
+MeteoState init_ethernet();
+MeteoState init_dhcp();
 void get_ip_addr(char *buffer);
-bool download_weather_data(char *api_key, CityWeather *city_weather);
+bool download_weather_data(CityWeather *city_weather);
 
 #endif

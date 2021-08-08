@@ -36,9 +36,9 @@ void clear_screen() {
 void set_menu_text(void) {
     static const char menu_str[] = {
         0x20, 0x83, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x75, 0x72, 0x65,
-        0x20, 0x7c, 0x20, 0x03, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x20,
-        0x95, 0x6e, 0x69, 0x74, 0x73, 0x20, 0x7c, 0x20, 0x91, 0x75,
-        0x69, 0x74, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20
+        0x20, 0x7c, 0x20, 0x95, 0x6e, 0x69, 0x74, 0x73, 0x20, 0x7c,
+        0x20, 0x92, 0x65, 0x66, 0x72, 0x65, 0x73, 0x68, 0x20, 0x7c,
+        0x20, 0x91, 0x75, 0x69, 0x74, 0x20, 0x20, 0x20, 0x20, 0x20,
     };
     memcpy((void *)VideoBases[23], menu_str, 40);
 }
@@ -110,18 +110,18 @@ Bitmap load_bitmap(char *filename) {
 
     strcpy(path, filename);
     strcat(path, ".A2LR");
-    printf("Loading %s\n", path);
+    //printf("Loading %s\n", path);
 
     file = fopen(path, "r");
     if (file == NULL) {
-        fail("Failed to load bitmap '%s'\n", path);
+        fail(FailOpenBitmapFileRead, 0);
     }
     i = fread(data, BITMAP_SIZE, 1, file);
     if (i != 1) {
         fclose(file);
-        fail("Unexpected element count: %d != 1\n", i);
+        fail(FailBitmapElementCount, 0);
     }
-    printf("Bitmap %s loaded\n", path);
+    //printf("Bitmap %s loaded\n", path);
     fclose(file);
     return (Bitmap)data;
 }
@@ -163,12 +163,9 @@ Bitmap get_bitmap_for_icon(char *icon) {
     Bitmap bitmap;
     uint8_t i;
 
-    //printf("get_bitmap_for_icon icon=%s bitmap_mappings=%x bm_count=%d filename=%s\n", icon, bitmap_mappings, bm_count, filename);
     if (bitmap_mappings != NULL) {
-        printf("Searching bitmaps cache for %s...\n", filename);
         for (i = 0; i < bm_count; ++i) {
             if (!strcmp(bitmap_mappings[i].filename, filename)) {
-                printf("Found it.\n");
                 return bitmap_mappings[i].bitmap;
             }
         }
@@ -185,17 +182,3 @@ Bitmap get_bitmap_for_icon(char *icon) {
     bm_count++;
     return bitmap;
 }
-
-/*
-void pset(unsigned char x, unsigned char y, unsigned char color) {
-    uint16_t addr = VideoBases[y >> 1] + x;
-    uint8_t byte = PEEK(addr);
-
-    if (y & 1) {
-        byte |= color << 4;
-    } else {
-        byte |= color;
-    }
-    POKE(addr, byte);
-}
-*/
