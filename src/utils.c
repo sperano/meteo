@@ -16,6 +16,7 @@ void fail(FailCode fail_code, uint16_t extra) {
     exit(1);
 }
 
+/*
 void exit_with_error(const char *fmt, ...) {
     va_list args;
     va_start(args, fmt);
@@ -26,6 +27,7 @@ void exit_with_error(const char *fmt, ...) {
     va_end(args);
     exit(1);
 }
+*/
 
 void* safe_malloc(size_t size) {
     void *p = malloc(size);

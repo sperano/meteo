@@ -1,14 +1,13 @@
+#include <stdlib.h>
+#include "config_screen.h"
 // check https://github.com/pedgarcia/a2graph/blob/master/a2graph.c
 // check https://github.com/ppelleti/json65
 // 01 to 04, then  09 to 013, maybe not 12?
 // http://openweathermap.org/img/w/01d.png
 // http://openweathermap.org/img/w/01n.png
-#include <conio.h>
+/*
 #include <peekpoke.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#include "config_screen.h"
 #include "gfx.h"
 #include "net.h"
 #include "ui.h"
@@ -16,8 +15,6 @@
 
 // TODO humidity
 // TODO 50d, 50n (mist)
-// TODO 50d (smoke)
-#ifdef WITH_CONFIG
 void _config_ethernet(void) {
     if (config_edit_ethernet_slot(&config, 0) == EditEthernetSlotCancelled) {
         fail(FailEthernetConfigCancelled, 0);
@@ -30,7 +27,6 @@ void _config_other_ethernet_slot(char *msg) {
     cgetc();
     _config_ethernet();
 }
-#endif
 
 void print_city_weather(CityWeather *cw) {
     char buffer[5];
@@ -54,7 +50,6 @@ void handle_keyboard() {
         update_gfx_image(current_city);
         update_gfx_text(current_city, current_units);
         switch (cgetc()) {
-#ifdef WITH_CONFIG
         case 'c':
         case 'C':
             exit_gfx();
@@ -64,7 +59,6 @@ void handle_keyboard() {
             init_gfx();
             set_menu_text();
             break;
-#endif
         case 'q':
         case 'Q':
             return;
@@ -128,16 +122,16 @@ void init() {
                 if (state == OK) {
                     get_ip_addr(ip_addr);
                     printf("IP Address: %s\n", ip_addr);
-                    printf("Validating API Key...\n");
+                    //printf("Validating API Key...\n");
                     state = validate_config_api_key();
                     if (state == OK) {
-                        printf("Validating Cities...\n");
+                        //printf("Validating Cities...\n");
                         state = validate_config_cities();
                         if (state == OK) {
                             for (; i < config.nb_cities; ++i) {
                                 printf("\n");
                                 city = config.cities[i];
-                                printf("City: %s\n", city->id);
+                                //printf("City: %s\n", city->id);
                                 if (!download_weather_data(city)) {
                                     fail(FailDownloadData, i);
                                 }
@@ -145,45 +139,40 @@ void init() {
                                 city->bitmap = get_bitmap_for_icon(city->icon);
                             }
                         } else {
-                            #ifdef WITH_CONFIG
                             if (config_add_city(&config, 0) == CityAddCancelled) {
                                 fail(FailNewCityCancelled, 0);
                             }
                             clrscr();
-                            #endif
                         }
                     } else {
-                        #ifdef WITH_CONFIG
                         if (config_edit_api_key(&config, 0) == EditAPIKeyCancelled) {
                             fail(FailAPIKeyConfigCancelled, 0);
                         };
                         clrscr();
-                        #endif
                     }
                 } else {
-                    #ifdef WITH_CONFIG
                     _config_other_ethernet_slot("obtain an IP address");
-                    #endif
                 }
             } else {
-                #ifdef WITH_CONFIG
                 _config_other_ethernet_slot("initialize ethernet");
-                #endif
             }
         } else {
-            #ifdef WITH_CONFIG
             _config_ethernet();
-            #endif
         }
     } while (state != OK);
     if (config.dirty) {
         save_config();
     }
 }
-
+*/
 int main(void) {
     _heapadd ((void *) 0x0800, 0x1800);
-    printf("Meteo version %s\nby Eric Sperano (2021)\n\n", METEO_VERSION);
+    //printf("Meteo version %s\nby Eric Sperano (2021)\n\n", METEO_VERSION);
+    //cgetc();
+    init_config();
+    load_config();
+    config_screen();
+    /*
     init();
     //POKE(_80COLON, 1);
 
@@ -194,5 +183,6 @@ int main(void) {
     exit_gfx();
     clrscr();
     free_config();
+    */
     return 0;
 }

@@ -38,7 +38,7 @@ bool download_weather_data(CityWeather *cw) {
         }
         len++;
         if (len == BUFFER_SIZE) {
-            fail("JSON File too big\n");
+            fail(FailJSONTooLarge, 0);
         }
     } while(1);
     buffer[len] = 0;

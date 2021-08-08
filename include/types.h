@@ -11,6 +11,13 @@ typedef enum {
     FailJSONParsing,
     FailMalloc,
     FailRealloc,
+    FailEthernetConfigCancelled,
+    FailEthernetInit,
+    FailDHCPInit,
+    FailAPIKeyConfigCancelled,
+    FailDownloadData,
+    FailNewCityCancelled,
+    FailJSONTooLarge,
 } FailCode;
 
 typedef enum {

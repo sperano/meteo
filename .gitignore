@@ -3,6 +3,8 @@
 meteo.bin
 meteo.system
 meteom.system
+config.system
+configm.system
 fetch.bin
 meteo.po
 vendor/bitmap2c/bitmap2c

@@ -269,7 +269,7 @@ ActionResult config_fetch_data(void *ctx, uint8_t idx) {
     if (!download_weather_data(city)) {
         return FetchDataFailed;
     }
-    city->bitmap = get_bitmap_for_icon(city->icon);
+    //city->bitmap = get_bitmap_for_icon(city->icon);
     config.dirty = true;
 #endif
     return DataFetched;
@@ -330,7 +330,7 @@ ActionResult config_add_city(void *ctx, uint8_t idx) {
         cgetc();
         return CityAddFailed;
     }
-    city->bitmap = get_bitmap_for_icon(city->icon);
+    //city->bitmap = get_bitmap_for_icon(city->icon);
 
     config->nb_cities++;
     config->cities = safe_realloc(config->cities, config->nb_cities * sizeof(CityWeather*));

@@ -10,8 +10,6 @@ uint8_t my_asm_func(uint8_t x, uint8_t y);
 
 void fail(FailCode fail_code, uint16_t extra);
 
-void exit_with_error(const char *fmt, ...);
-
 void* safe_malloc(size_t size);
 void* safe_realloc(void *ptr, size_t size);
 char* alloc_copy(const char *src);

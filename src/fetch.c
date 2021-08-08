@@ -13,7 +13,7 @@ void main(void) {
     uint8_t eth_init = 5; //ETH_INIT_DEFAULT;
     char *ptr = url;
 
-    read_config();
+    load_config();
     /*
     for (len = 1; len < 8; ++len) {
         printf("Init ether slot #%d\n", len);
@@ -27,11 +27,11 @@ void main(void) {
     }
     */
     if (ip65_init(eth_init)) {
-        fail("Error initializing ethernet\n");
+        fail(FailEthernetInit, 0);
     }
     printf("- Ok\n\nObtaining IP address ");
     if (dhcp_init()) {
-        fail("Error DHCP\n");
+        fail(FailDHCPInit, 0);
     }
     strcpy(url, "http://api.openweathermap.org/data/2.5/weather?id=5368335&appid=f3b3e0e41592b6706cc8b6040a335f45");
 
