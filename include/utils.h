@@ -22,5 +22,6 @@ void celsius_str(char *buffer, const celsius temp);
 
 const char* utf8_to_ascii(const char *);
 
+int16_t download_weather_data_w(CityWeather *city_weather);
 
 #endif

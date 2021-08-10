@@ -19,11 +19,11 @@ void get_ip_addr(char *buffer) {
     snprintf(buffer, IP_ADDR_STR_LENGTH, "%d.%d.%d.%d\n", ip_bytes[0], ip_bytes[1], ip_bytes[2], ip_bytes[3]);
 }
 
-bool download_weather_data(CityWeather *cw) {
+int16_t download_weather_data(CityWeather *cw) {
     //static char url[128]; // must be 1460 bytes
     char *url = safe_malloc(1460);
     char *buffer = safe_malloc(BUFFER_SIZE);
-    uint16_t len = 0;
+    int16_t len = 0;
     char *ptr = url;
 
     sprintf(url, "http://api.openweathermap.org/data/2.5/weather?id=%s&appid=%s", cw->id, config.api_key);
@@ -31,16 +31,17 @@ bool download_weather_data(CityWeather *cw) {
         *ptr = toascii(*ptr);
         ++ptr;
     }
-    printf("Downloading weather for %s\n", cw->id);
     len = url_download(url, buffer, BUFFER_SIZE);
     free(url);
-    printf("Downloaded %d bytes.\n", len);
     ptr = buffer;
     // go to beginning of json
     while (*ptr && *ptr != '{') {
-        ++ptr; // TODO assert that we found one {
+        ++ptr;
+    }
+    if (*ptr == 0) {
+        return -1; // never found valid json
     }
     parse_api_response(cw, ptr, len-(ptr-buffer));
     free(buffer);
-    return true;
+    return len;
 }

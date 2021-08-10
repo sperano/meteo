@@ -17,6 +17,8 @@
 
 void init_gfx(void);
 void exit_gfx(void);
+void clear_text(void);
+void set_text_line(char *msg, uint8_t line);
 void clear_screen(void);
 void set_menu_text(void);
 void update_gfx_text(CityWeather *cw, Units units);

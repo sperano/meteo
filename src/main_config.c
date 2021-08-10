@@ -186,3 +186,7 @@ int main(void) {
     */
     return 0;
 }
+
+Bitmap get_bitmap_for_icon(char *icon) {
+    return NULL;
+}

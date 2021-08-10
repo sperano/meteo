@@ -2,6 +2,7 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
+#include "net.h"
 #include "utils.h"
 
 void fail(FailCode fail_code, uint16_t extra) {
@@ -133,4 +134,12 @@ const char *utf8_to_ascii(const char *str) {
     }
     *str1 = 0;
     return str;
+}
+
+int16_t download_weather_data_w(CityWeather *city) {
+    int16_t len;
+    printf("Downloading weather for city: %s\n", city->id);
+    len = download_weather_data(city);
+    printf("Downloaded %d bytes.\n", len);
+    return len;
 }

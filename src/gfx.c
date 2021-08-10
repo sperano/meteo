@@ -19,12 +19,20 @@ void exit_gfx(void) {
     POKE(TEXTON, 0);
 }
 
-void clear_screen() {
-    memset((void *)VideoBases[0], 0, 0x400);
+void clear_text(void) {
     memset((void *)VideoBases[20], ' ' + 0x80, 40);
     memset((void *)VideoBases[21], ' ' + 0x80, 40);
     memset((void *)VideoBases[22], ' ' + 0x80, 40);
     memset((void *)VideoBases[23], ' ' + 0x80, 40);
+}
+
+void set_text_line(char *msg, uint8_t line) {
+    memcpy((void *)VideoBases[line], msg, 40);
+}
+
+void clear_screen(void) {
+    memset((void *)VideoBases[0], 0, 0x400);
+    clear_text();
 }
 
 void set_menu_text(void) {

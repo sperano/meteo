@@ -266,10 +266,10 @@ ActionResult config_fetch_data(void *ctx, uint8_t idx) {
     clrscr();
     print_config_header();
     printf("\nCity: %s\n\n", city->name);
-    if (!download_weather_data(city)) {
+    if (!download_weather_data_w(city)) {
         return FetchDataFailed;
     }
-    //city->bitmap = get_bitmap_for_icon(city->icon);
+    city->bitmap = get_bitmap_for_icon(city->icon);
     config.dirty = true;
 #endif
     return DataFetched;

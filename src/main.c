@@ -34,8 +34,8 @@ void _config_other_ethernet_slot(char *msg) {
 
 void print_city_weather(CityWeather *cw) {
     char buffer[5];
-    printf("%s: %s (%s)\n", cw->name, cw->weather, cw->description);
-    //printf("ID: %s - Icon: %s\n", cw->id, cw->icon);
+    //printf("%s: %s (%s)\n", cw->name, cw->weather, cw->description);
+    printf("ID: %s - Icon: %s\n", cw->id, cw->icon);
     celsius_str(buffer, cw->temperatureC);
     printf("Temperature: %sC / %dF\n", buffer, cw->temperatureF);
     celsius_str(buffer, cw->minimumC);
@@ -46,6 +46,12 @@ void print_city_weather(CityWeather *cw) {
 }
 
 void handle_keyboard() {
+    static char downloading_msg[] = {
+        0x84, 0xef, 0xf7, 0xee, 0xec, 0xef, 0xe1, 0xe4, 0xe9, 0xee,
+        0xe7, 0xa0, 0xf7, 0xe5, 0xe1, 0xf4, 0xe8, 0xe5, 0xf2, 0xa0,
+        0xe4, 0xe1, 0xf4, 0xe1, 0xae, 0xae, 0xae, 0xa0, 0xa0, 0xa0,
+        0xa0, 0xa0, 0xa0, 0xa0, 0xa0, 0xa0, 0xa0, 0xa0, 0xa0, 0xa0,
+    };
     int8_t city_idx = 0;
     Units current_units = config.default_units;
     CityWeather *current_city;
@@ -70,7 +76,10 @@ void handle_keyboard() {
             return;
         case 'r':
         case 'R':
-            //return;
+            clear_text();
+            set_text_line(downloading_msg, 21);
+            download_weather_data(current_city);
+            set_menu_text();
             break;
         case 'u':
         case 'U':
@@ -93,7 +102,6 @@ void handle_keyboard() {
 }
 
 void init() {
-    //MeteoConfig *config = init_config(NULL);
     MeteoState state;
     uint8_t i = 0;
     char ip_addr[IP_ADDR_STR_LENGTH];
@@ -114,10 +122,10 @@ void init() {
         printf("Using default configuration.\n");
         init_config();
     }
-    print_config();
+    //print_config();
     /////////////////////
     do {
-        //printf("Validating Ethernet slot...\n");
+        printf("Validating Ethernet slot...\n");
         state = validate_config_ethernet();
         if (state == OK) {
             printf("Intializing Ethernet card...\n");
@@ -128,17 +136,16 @@ void init() {
                 if (state == OK) {
                     get_ip_addr(ip_addr);
                     printf("IP Address: %s\n", ip_addr);
-                    printf("Validating API Key...\n");
+                    printf("Validating API key...\n");
                     state = validate_config_api_key();
                     if (state == OK) {
-                        printf("Validating Cities...\n");
+                        printf("Validating cities...\n");
                         state = validate_config_cities();
                         if (state == OK) {
                             for (; i < config.nb_cities; ++i) {
                                 printf("\n");
                                 city = config.cities[i];
-                                printf("City: %s\n", city->id);
-                                if (!download_weather_data(city)) {
+                                if (download_weather_data_w(city) < 1) {
                                     fail(FailDownloadData, i);
                                 }
                                 print_city_weather(city);

@@ -18,18 +18,18 @@ void get_ip_addr(char *buffer) {
     strcpy(buffer, "192.168.0.20");
 }
 
-bool download_weather_data(CityWeather *cw) {
+int16_t download_weather_data(CityWeather *cw) {
     static char buffer[BUFFER_SIZE];
     uint16_t len = 0;
     char filename[15];
     FILE *f;
 
     sprintf(filename, "W%s.JSON", cw->id);
-    printf("Loading %s\n", filename);
+    //printf("Loading %s\n", filename);
     f = fopen(filename, "r");
     if (!f) {
         //fail("Can't open %s\n", filename);
-        return false;
+        return -1;
     }
     do {
         buffer[len] = fgetc(f);
@@ -42,8 +42,8 @@ bool download_weather_data(CityWeather *cw) {
         }
     } while(1);
     buffer[len] = 0;
-    printf("Read %d bytes.\n", len);
+    //printf("Read %d bytes.\n", len);
     parse_api_response(cw, buffer, len);
     fclose(f);
-    return true;
+    return len;
 }
