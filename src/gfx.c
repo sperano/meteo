@@ -63,12 +63,11 @@ void update_gfx_text(CityWeather *cw, Units units) {
     i = strlen(line1);
     memset(line1 + i, ' ', 40 - i);
     // second line
-    strcpy(line2, cw->weather );
-    strcat(line2, " (");
-    strcat(line2, cw->description);
-    strcat(line2, ")");
+    strncpy(line2, cw->description, 40);
     i = strlen(line2);
-    memset(line2 + i, ' ', 40 - i);
+    if (i < 40) {
+        memset(line2 + i, ' ', 40 - i);
+    }
     // third line
     if (units == Celsius) {
         strcpy(line3, "Minimum: ");
