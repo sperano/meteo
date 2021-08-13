@@ -79,6 +79,7 @@ void handle_keyboard() {
             clear_text();
             set_text_line(downloading_msg, 21);
             download_weather_data(current_city);
+            current_city->bitmap = get_bitmap_for_icon(current_city->icon);
             set_menu_text();
             break;
         case 'u':
@@ -190,6 +191,7 @@ void init() {
 
 int main(void) {
     _heapadd ((void *) 0x0800, 0x1800);
+    clrscr();
     printf("Meteo version %s\nby Eric Sperano (2021)\n\n", METEO_VERSION);
     init();
     //POKE(_80COLON, 1);
